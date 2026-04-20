@@ -27,6 +27,8 @@ module.exports = (sequelize, DataTypes) => {
     lastName: DataTypes.STRING,
     phone: DataTypes.STRING,
     avatar: DataTypes.TEXT,
+    authProvider: { type: DataTypes.STRING, field: 'auth_provider' },
+    providerUserId: { type: DataTypes.STRING, field: 'provider_user_id' },
     role: DataTypes.STRING,
     sellerStatus: DataTypes.STRING,
     shopName: { type: DataTypes.STRING, field: 'shop_name' },

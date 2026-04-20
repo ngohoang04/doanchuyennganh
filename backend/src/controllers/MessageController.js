@@ -1,25 +1,27 @@
 const MessageService = require('../services/MessageService');
 
 class MessageController {
-
-    static async getConversation(req, res) {
+    static async getContacts(req, res) {
         try {
-            const { senderId, receiverId } = req.params;
-
-            const messages = await MessageService.getConversation(
-                senderId,
-                receiverId
-            );
-
-            res.json(messages);
+            const contacts = await MessageService.getContacts(req.user);
+            res.json(contacts);
         } catch (err) {
             res.status(500).json({ message: err.message });
         }
     }
 
+    static async getConversation(req, res) {
+        try {
+            const messages = await MessageService.getConversation(req.user, req.params.userId);
+            res.json(messages);
+        } catch (err) {
+            res.status(400).json({ message: err.message });
+        }
+    }
+
     static async sendMessage(req, res) {
         try {
-            const message = await MessageService.sendMessage(req.body);
+            const message = await MessageService.sendMessage(req.user, req.body);
             res.status(201).json(message);
         } catch (err) {
             res.status(400).json({ message: err.message });

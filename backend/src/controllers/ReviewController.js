@@ -20,12 +20,19 @@ class ReviewController {
         }
     }
 
+    static async getEligibility(req, res) {
+        try {
+            const eligibility = await ReviewService.getReviewEligibility(req.user, req.params.productId);
+            res.json(eligibility);
+        } catch (err) {
+            const statusCode = err.message === 'Product not found' ? 404 : 400;
+            res.status(statusCode).json({ message: err.message });
+        }
+    }
+
     static async create(req, res) {
         try {
-            const review = await ReviewService.create({
-                ...req.body,
-                userId: req.user.id
-            });
+            const review = await ReviewService.create(req.user, req.body);
             res.status(201).json(review);
         } catch (err) {
             res.status(400).json({ message: err.message });

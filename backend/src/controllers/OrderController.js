@@ -50,8 +50,8 @@ class OrderController {
 
     static async checkout(req, res) {
         try {
-            const { shippingAddress } = req.body;
-            const order = await OrderService.checkout(req.user.id, shippingAddress);
+            const { shippingAddress, ...options } = req.body;
+            const order = await OrderService.checkout(req.user.id, shippingAddress, options);
 
             res.json(order);
         } catch (err) {
@@ -75,6 +75,26 @@ class OrderController {
                 req.params.id,
                 req.body.status
             );
+            res.json(order);
+        } catch (err) {
+            const statusCode = err.message === 'Forbidden' ? 403 : 400;
+            res.status(statusCode).json({ message: err.message });
+        }
+    }
+
+    static async cancelByUser(req, res) {
+        try {
+            const order = await OrderService.cancelByUser(req.user, req.params.id);
+            res.json(order);
+        } catch (err) {
+            const statusCode = err.message === 'Forbidden' ? 403 : 400;
+            res.status(statusCode).json({ message: err.message });
+        }
+    }
+
+    static async returnByUser(req, res) {
+        try {
+            const order = await OrderService.returnByUser(req.user, req.params.id);
             res.json(order);
         } catch (err) {
             const statusCode = err.message === 'Forbidden' ? 403 : 400;

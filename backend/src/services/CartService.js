@@ -1,41 +1,40 @@
-const { Cart, CartItem, Product } = require('../models');
+const { Cart, CartItem, Product, User } = require('../models');
 
 class CartService {
+    static buildCartInclude() {
+        return [
+            {
+                model: CartItem,
+                as: 'items',
+                include: [{
+                    model: Product,
+                    as: 'product',
+                    include: [{
+                        model: User,
+                        as: 'seller',
+                        attributes: ['id', 'firstName', 'lastName', 'shopName', 'bankAccount']
+                    }]
+                }]
+            }
+        ];
+    }
 
     static async getAll() {
         return await Cart.findAll({
-            include: [
-                {
-                    model: CartItem,
-                    as: 'items',
-                    include: [{ model: Product, as: 'product' }]
-                }
-            ]
+            include: this.buildCartInclude()
         });
     }
 
     static async getCart(userId) {
         let cart = await Cart.findOne({
             where: { userId },
-            include: [
-                {
-                    model: CartItem,
-                    as: 'items',
-                    include: [{ model: Product, as: 'product' }]
-                }
-            ]
+            include: this.buildCartInclude()
         });
 
         if (!cart) {
             cart = await Cart.create({ userId });
             cart = await Cart.findByPk(cart.id, {
-                include: [
-                    {
-                        model: CartItem,
-                        as: 'items',
-                        include: [{ model: Product, as: 'product' }]
-                    }
-                ]
+                include: this.buildCartInclude()
             });
         }
 

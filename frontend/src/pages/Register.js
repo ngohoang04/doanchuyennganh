@@ -1,9 +1,15 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { register } from '../services/AuthService';
+import { useAuth } from '../context/AuthContext';
+import {
+    getSocialAuthConfigError,
+    requestFacebookAccessToken,
+    requestGoogleAccessToken
+} from '../services/socialAuth';
 import './auth.css';
 
-function Register({ show = true, onClose }) {
+function Register({ show = true, onClose, onShowLogin }) {
     const [formData, setFormData] = useState({
         firstName: '',
         lastName: '',
@@ -16,10 +22,31 @@ function Register({ show = true, onClose }) {
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirm, setShowConfirm] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [socialLoading, setSocialLoading] = useState('');
     const [error, setError] = useState('');
     const navigate = useNavigate();
+    const { socialLogin } = useAuth();
 
     if (!show) return null;
+
+    const handleClose = () => {
+        if (onClose) {
+            onClose();
+            return;
+        }
+        navigate('/');
+    };
+
+    const handleShowLogin = () => {
+        if (onClose) onClose();
+
+        if (onShowLogin) {
+            onShowLogin();
+            return;
+        }
+
+        window.dispatchEvent(new Event('open-login-modal'));
+    };
 
     const handleChange = (e) => {
         setFormData({
@@ -76,8 +103,7 @@ function Register({ show = true, onClose }) {
             });
 
             alert('Dang ky thanh cong! Vui long dang nhap.');
-            if (onClose) onClose();
-            navigate('/');
+            handleShowLogin();
         } catch (err) {
             setError(err.message || 'Co loi khi dang ky');
         } finally {
@@ -85,18 +111,41 @@ function Register({ show = true, onClose }) {
         }
     };
 
+    const handleSocialRegister = async (provider) => {
+        const configError = getSocialAuthConfigError(provider);
+        if (configError) {
+            setError(configError);
+            return;
+        }
+
+        setSocialLoading(provider);
+        setError('');
+
+        try {
+            const accessToken = provider === 'google'
+                ? await requestGoogleAccessToken()
+                : await requestFacebookAccessToken();
+            await socialLogin(provider, accessToken);
+            if (onClose) onClose();
+        } catch (err) {
+            setError(err.message || 'Dang ky mang xa hoi that bai');
+        } finally {
+            setSocialLoading('');
+        }
+    };
+
     return (
         <div
             className="modal-overlay"
             style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0, 0, 0, 0.6)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(5px)' }}
-            onClick={onClose}
+            onClick={handleClose}
         >
             <div
                 className="auth-card position-relative shadow-lg"
                 style={{ maxWidth: '450px', width: '90%', margin: '20px', maxHeight: '90vh', overflowY: 'auto', animation: 'fadeIn 0.3s ease' }}
                 onClick={(e) => e.stopPropagation()}
             >
-                <button type="button" className="btn-close position-absolute top-0 end-0 m-3" aria-label="Close" onClick={onClose} style={{ zIndex: 10 }}></button>
+                <button type="button" className="btn-close position-absolute top-0 end-0 m-3" aria-label="Close" onClick={handleClose} style={{ zIndex: 10 }}></button>
                 <div className="auth-header">
                     <h2>Tao Tai Khoan</h2>
                     <p>Tham gia TechShop ngay hom nay</p>
@@ -232,9 +281,36 @@ function Register({ show = true, onClose }) {
                     </button>
                 </form>
 
+                <div className="divider">HOAC</div>
+
+                <button
+                    type="button"
+                    className="btn btn-social google-login w-100 mb-2"
+                    onClick={() => handleSocialRegister('google')}
+                    disabled={Boolean(socialLoading)}
+                >
+                    <i className="bi bi-google"></i> {socialLoading === 'google' ? 'Dang ket noi Google...' : 'Dang ky voi Google'}
+                </button>
+
+                <button
+                    type="button"
+                    className="btn btn-social facebook-login w-100 mb-3"
+                    onClick={() => handleSocialRegister('facebook')}
+                    disabled={Boolean(socialLoading)}
+                >
+                    <i className="bi bi-facebook"></i> {socialLoading === 'facebook' ? 'Dang ket noi Facebook...' : 'Dang ky voi Facebook'}
+                </button>
+
                 <div className="auth-footer">
                     <p>Ban da co tai khoan?</p>
-                    <Link to="/login" className="link-primary" onClick={onClose}>Dang nhap ngay</Link>
+                    <button
+                        type="button"
+                        className="link-primary btn btn-link"
+                        onClick={handleShowLogin}
+                        style={{ textDecoration: 'none', padding: 0, border: 'none' }}
+                    >
+                        Dang nhap ngay
+                    </button>
                 </div>
             </div>
         </div>

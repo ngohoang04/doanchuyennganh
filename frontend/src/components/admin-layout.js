@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import ChatWidget from './ChatWidget';
 import './admin-layout.css';
 
 function AdminLayout({ children }) {
@@ -71,6 +72,14 @@ function AdminLayout({ children }) {
                         <h1 className="page-title">TechShop Admin</h1>
                     </div>
                     <div className="header-right">
+                        <button
+                            type="button"
+                            className="btn btn-outline-primary me-3"
+                            onClick={() => navigate('/')}
+                        >
+                            <i className="bi bi-house-door me-2"></i>
+                            Ve trang chu
+                        </button>
                         <div className="user-info">
                             <span className="user-name">{displayName}</span>
                             <img
@@ -85,6 +94,7 @@ function AdminLayout({ children }) {
                 <main className="admin-content">
                     {children}
                 </main>
+                <ChatWidget />
             </div>
         </div>
     );

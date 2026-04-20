@@ -9,33 +9,42 @@ function SellerDashboard() {
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
 
+    const fetchData = async () => {
+        try {
+            setLoading(true);
+            const [productsRes, ordersRes] = await Promise.all([
+                api.get('/products/seller/mine'),
+                api.get('/orders/seller/mine')
+            ]);
+            setProducts(productsRes.data || []);
+            setOrders(ordersRes.data || []);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     useEffect(() => {
-        const fetchData = async () => {
-            try {
-                setLoading(true);
-                const [productsRes, ordersRes] = await Promise.all([
-                    api.get('/products/seller/mine'),
-                    api.get('/orders/seller/mine')
-                ]);
-                setProducts(productsRes.data || []);
-                setOrders(ordersRes.data || []);
-            } finally {
-                setLoading(false);
-            }
+        fetchData();
+
+        const handleOrdersUpdated = () => {
+            fetchData();
         };
 
-        fetchData();
+        window.addEventListener('orders-updated', handleOrdersUpdated);
+        return () => window.removeEventListener('orders-updated', handleOrdersUpdated);
     }, []);
 
     const revenue = useMemo(
         () =>
             orders.reduce(
                 (sum, order) =>
-                    sum +
-                    (order.orderItems || []).reduce(
-                        (sub, item) => sub + Number(item.price || 0) * Number(item.quantity || 0),
-                        0
-                    ),
+                    String(order.status || '').toLowerCase() === 'completed'
+                        ? sum +
+                          (order.orderItems || []).reduce(
+                              (sub, item) => sub + Number(item.price || 0) * Number(item.quantity || 0),
+                              0
+                          )
+                        : sum,
                 0
             ),
         [orders]

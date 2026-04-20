@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import ChatWidget from './ChatWidget';
 import './admin-layout.css';
 
 function SellerLayout({ children }) {
@@ -88,6 +89,7 @@ function SellerLayout({ children }) {
                 </header>
 
                 <main className="admin-content">{children}</main>
+                <ChatWidget />
             </div>
         </div>
     );

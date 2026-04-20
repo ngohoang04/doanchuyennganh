@@ -20,6 +20,13 @@ function SellerProducts() {
     useEffect(() => {
         fetchProducts();
         fetchCategories();
+
+        const handleOrdersUpdated = () => {
+            fetchProducts();
+        };
+
+        window.addEventListener('orders-updated', handleOrdersUpdated);
+        return () => window.removeEventListener('orders-updated', handleOrdersUpdated);
     }, []);
 
     const fetchProducts = async () => {

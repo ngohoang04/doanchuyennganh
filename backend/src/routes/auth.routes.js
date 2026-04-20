@@ -10,6 +10,9 @@ router.post('/register', validateRegister, AuthController.register);
 // LOGIN
 router.post('/login', validateLogin, AuthController.login);
 
+// SOCIAL LOGIN / REGISTER
+router.post('/social', AuthController.socialLogin);
+
 // CHANGE PASSWORD
 router.post('/change-password/:id', protect, AuthController.changePassword);
 

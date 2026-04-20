@@ -24,6 +24,15 @@ const getDerivedReviewCount = (product) => {
     return (Number(product.id || 0) * 3) % 40;
 };
 
+const getDerivedAverageRating = (product) => {
+    if (typeof product.averageRating === 'number') return product.averageRating;
+    if (Array.isArray(product.reviews) && product.reviews.length > 0) {
+        const total = product.reviews.reduce((sum, review) => sum + Number(review.rating || 0), 0);
+        return Number((total / product.reviews.length).toFixed(1));
+    }
+    return 0;
+};
+
 const getPriceRange = (value) => {
     if (value === 'under-5m') return (price) => price < 5000000;
     if (value === '5m-15m') return (price) => price >= 5000000 && price <= 15000000;
@@ -98,6 +107,10 @@ function Products() {
         setPriceRange('all');
         setMinSoldCount('all');
         setMinReviewCount('all');
+    };
+
+    const openProductDetail = (product) => {
+        navigate(`/product/${product.id}`, { state: { product } });
     };
 
     return (
@@ -176,9 +189,22 @@ function Products() {
                                     filteredProducts.map((product) => {
                                         const soldCount = getDerivedSoldCount(product);
                                         const reviewCount = getDerivedReviewCount(product);
+                                        const averageRating = getDerivedAverageRating(product);
 
                                         return (
-                                            <div key={product.id} className="category-card">
+                                            <div
+                                                key={product.id}
+                                                className="category-card product-card-clickable"
+                                                role="button"
+                                                tabIndex={0}
+                                                onClick={() => openProductDetail(product)}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter' || e.key === ' ') {
+                                                        e.preventDefault();
+                                                        openProductDetail(product);
+                                                    }
+                                                }}
+                                            >
                                                 <div className="category-image">
                                                     <img
                                                         src={product.image || 'https://via.placeholder.com/300x200?text=TechShop'}
@@ -189,13 +215,20 @@ function Products() {
                                                     <h3>{product.name}</h3>
                                                     <p className="products-meta">
                                                         <span>{soldCount} da ban</span>
+                                                        {averageRating > 0 && <span>{averageRating}/5 sao</span>}
                                                         <span>{reviewCount} danh gia</span>
                                                     </p>
                                                     <p style={{ color: '#666' }}>{product.description}</p>
                                                     <p style={{ color: 'red', fontWeight: 700 }}>
                                                         {Number(product.price || 0).toLocaleString('vi-VN')} VND
                                                     </p>
-                                                    <button className="category-btn" onClick={() => navigate(`/product/${product.id}`)}>
+                                                    <button
+                                                        className="category-btn"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            openProductDetail(product);
+                                                        }}
+                                                    >
                                                         Xem chi tiet
                                                     </button>
                                                 </div>

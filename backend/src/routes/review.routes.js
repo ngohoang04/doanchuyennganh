@@ -11,6 +11,7 @@ router.post('/', protect, ReviewController.create);
 
 // GET reviews by product (protected) - specific route before generic
 router.get('/product/:productId', ReviewController.getByProduct);
+router.get('/product/:productId/eligibility', protect, ReviewController.getEligibility);
 
 // DELETE review (protected)
 router.delete('/:id', protect, ReviewController.delete);

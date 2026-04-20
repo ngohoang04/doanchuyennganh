@@ -15,6 +15,8 @@ router.post('/checkout', protect, OrderController.checkout);
 // SELLER ORDERS
 router.get('/seller/mine', protect, authorize('seller', 'admin'), OrderController.getSellerOrders);
 router.put('/seller/:id/status', protect, authorize('seller', 'admin'), OrderController.updateSellerOrderStatus);
+router.put('/:id/cancel', protect, OrderController.cancelByUser);
+router.put('/:id/return', protect, OrderController.returnByUser);
 
 // UPDATE order (protected)
 router.put('/:id', protect, OrderController.update);

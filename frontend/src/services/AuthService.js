@@ -43,6 +43,24 @@ export const register = async (userData) => {
     }
 };
 
+export const socialLogin = async (provider, accessToken) => {
+    try {
+        const response = await api.post('/auth/social', { provider, accessToken });
+        if (response.data.token) {
+            localStorage.setItem('token', response.data.token);
+            if (response.data.user) {
+                localStorage.setItem('user', JSON.stringify(response.data.user));
+            }
+        }
+        return response.data;
+    } catch (error) {
+        if (!error.response) {
+            throw new Error(`Khong the ket noi toi backend tai ${getApiBaseUrl()}. Hay khoi dong backend roi thu lai.`);
+        }
+        throw new Error(error.response?.data?.message || 'Loi khi dang nhap mang xa hoi');
+    }
+};
+
 export const logout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');

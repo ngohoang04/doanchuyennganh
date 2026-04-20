@@ -5,6 +5,26 @@ import { getCategories, getProducts } from '../services/shop';
 import './home.css';
 
 const slugify = (value) => (value || '').toLowerCase().trim().replace(/\s+/g, '-');
+const getDerivedSoldCount = (product) => {
+    if (typeof product.soldCount === 'number') return product.soldCount;
+    if (Array.isArray(product.orderItems)) {
+        return product.orderItems.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
+    }
+    return 0;
+};
+const getDerivedReviewCount = (product) => {
+    if (typeof product.reviewCount === 'number') return product.reviewCount;
+    if (Array.isArray(product.reviews)) return product.reviews.length;
+    return 0;
+};
+const getDerivedAverageRating = (product) => {
+    if (typeof product.averageRating === 'number') return product.averageRating;
+    if (Array.isArray(product.reviews) && product.reviews.length > 0) {
+        const total = product.reviews.reduce((sum, review) => sum + Number(review.rating || 0), 0);
+        return Number((total / product.reviews.length).toFixed(1));
+    }
+    return 0;
+};
 
 function CategoryPage() {
     const { slug } = useParams();
@@ -44,6 +64,10 @@ function CategoryPage() {
         [products, currentCategory]
     );
 
+    const openProductDetail = (product) => {
+        navigate(`/product/${product.id}`, { state: { product } });
+    };
+
     return (
         <div className="container py-5">
             <div className="d-flex justify-content-between align-items-center mb-4">
@@ -60,26 +84,55 @@ function CategoryPage() {
                     {filteredProducts.length === 0 ? (
                         <p>Khong co san pham trong danh muc nay.</p>
                     ) : (
-                        filteredProducts.map((product) => (
-                            <div key={product.id} className="category-card">
-                                <div className="category-image">
-                                    <img
-                                        src={product.image || 'https://via.placeholder.com/300x200?text=TechShop'}
-                                        alt={product.name}
-                                    />
+                        filteredProducts.map((product) => {
+                            const soldCount = getDerivedSoldCount(product);
+                            const reviewCount = getDerivedReviewCount(product);
+                            const averageRating = getDerivedAverageRating(product);
+
+                            return (
+                                <div
+                                    key={product.id}
+                                    className="category-card product-card-clickable"
+                                    role="button"
+                                    tabIndex={0}
+                                    onClick={() => openProductDetail(product)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter' || e.key === ' ') {
+                                            e.preventDefault();
+                                            openProductDetail(product);
+                                        }
+                                    }}
+                                >
+                                    <div className="category-image">
+                                        <img
+                                            src={product.image || 'https://via.placeholder.com/300x200?text=TechShop'}
+                                            alt={product.name}
+                                        />
+                                    </div>
+                                    <div className="category-info">
+                                        <h3>{product.name}</h3>
+                                        <p className="products-meta">
+                                            <span>{soldCount} da ban</span>
+                                            {averageRating > 0 && <span>{averageRating}/5 sao</span>}
+                                            <span>{reviewCount} danh gia</span>
+                                        </p>
+                                        <p style={{ color: '#666' }}>{product.description}</p>
+                                        <p style={{ color: 'red', fontWeight: 700 }}>
+                                            {Number(product.price || 0).toLocaleString('vi-VN')} VND
+                                        </p>
+                                        <button
+                                            className="category-btn"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                openProductDetail(product);
+                                            }}
+                                        >
+                                            Xem chi tiet
+                                        </button>
+                                    </div>
                                 </div>
-                                <div className="category-info">
-                                    <h3>{product.name}</h3>
-                                    <p style={{ color: '#666' }}>{product.description}</p>
-                                    <p style={{ color: 'red', fontWeight: 700 }}>
-                                        {Number(product.price || 0).toLocaleString('vi-VN')} VND
-                                    </p>
-                                    <button className="category-btn" onClick={() => navigate(`/product/${product.id}`)}>
-                                        Xem chi tiet
-                                    </button>
-                                </div>
-                            </div>
-                        ))
+                            );
+                        })
                     )}
                 </div>
             )}

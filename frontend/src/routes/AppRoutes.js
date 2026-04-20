@@ -1,6 +1,5 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Home from '../pages/Home';
-import Login from '../pages/Login';
 import Products from '../pages/Products';
 import CategoryPage from '../pages/CategoryPage';
 import ProductDetail from '../pages/ProductDetail';
@@ -25,6 +24,7 @@ import SellerRoute from './SellerRoute';
 import SellerDashboard from '../pages/SellerDashboard';
 import SellerProducts from '../pages/SellerProducts';
 import SellerOrders from '../pages/SellerOrders';
+import AuthRouteRedirect from '../pages/AuthRouteRedirect';
 
 function AppRoutes() {
     return (
@@ -191,7 +191,8 @@ function AppRoutes() {
                     }
                 />
 
-                <Route path="/login" element={<Login />} />
+                <Route path="/login" element={<AuthRouteRedirect modal="login" />} />
+                <Route path="/register" element={<AuthRouteRedirect modal="register" />} />
             </Routes>
         </BrowserRouter>
     );

@@ -8,6 +8,13 @@ function AdminOrders() {
 
     useEffect(() => {
         fetchOrders();
+
+        const handleOrdersUpdated = () => {
+            fetchOrders();
+        };
+
+        window.addEventListener('orders-updated', handleOrdersUpdated);
+        return () => window.removeEventListener('orders-updated', handleOrdersUpdated);
     }, []);
 
     const fetchOrders = async () => {

@@ -3,13 +3,9 @@ const router = express.Router();
 const MessageController = require('../controllers/MessageController');
 const { protect } = require('../middleware/authMiddleware');
 
-// Get conversation (protected)
-router.get('/:senderId/:receiverId', protect, MessageController.getConversation);
-
-// Send message (protected)
+router.get('/contacts', protect, MessageController.getContacts);
+router.get('/conversation/:userId', protect, MessageController.getConversation);
 router.post('/', protect, MessageController.sendMessage);
-
-// Delete message (protected)
 router.delete('/:id', protect, MessageController.delete);
 
 module.exports = router;

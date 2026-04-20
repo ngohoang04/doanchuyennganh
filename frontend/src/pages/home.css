@@ -162,6 +162,11 @@
     transform: translateY(-8px);
 }
 
+.product-card-clickable:focus-visible {
+    outline: 3px solid rgba(102, 126, 234, 0.35);
+    outline-offset: 4px;
+}
+
 .category-image {
     position: relative;
     overflow: hidden;

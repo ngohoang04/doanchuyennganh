@@ -33,6 +33,20 @@ class AuthController {
         }
     }
 
+    static async socialLogin(req, res) {
+        try {
+            const { provider, accessToken } = req.body;
+            const user = await AuthService.socialLogin(provider, accessToken);
+
+            res.json({
+                user,
+                token: generateToken(user.id)
+            });
+        } catch (err) {
+            res.status(400).json({ message: err.message });
+        }
+    }
+
     static async changePassword(req, res) {
         try {
             const result = await AuthService.changePassword(

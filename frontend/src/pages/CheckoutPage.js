@@ -11,9 +11,131 @@ const SHIPPING_OPTIONS = [
 
 const PAYMENT_OPTIONS = [
     { id: 'cod', label: 'Thanh toan khi nhan hang' },
-    { id: 'bank', label: 'Chuyen khoan ngan hang' },
+    { id: 'bank', label: 'Chuyen khoan ngan hang qua QR shop' },
     { id: 'wallet', label: 'Vi dien tu' }
 ];
+
+const BANK_NAME_MAP = {
+    VCB: 'vietcombank',
+    VIETCOMBANK: 'vietcombank',
+    BIDV: 'bidv',
+    AGRIBANK: 'agribank',
+    VIETINBANK: 'vietinbank',
+    TECHCOMBANK: 'techcombank',
+    MBBANK: 'mbbank',
+    MB: 'mbbank',
+    ACB: 'acb',
+    TPBANK: 'tpbank',
+    SACOMBANK: 'sacombank',
+    HDBANK: 'hdbank',
+    OCB: 'ocb',
+    VIB: 'vib',
+    MSB: 'msb',
+    SHB: 'shb',
+    EXIMBANK: 'eximbank'
+};
+
+const parseBankAccount = (value = '') => {
+    const normalized = String(value || '').trim();
+    if (!normalized) return null;
+
+    const segments = normalized
+        .split(/[-,|]/)
+        .map((segment) => segment.trim())
+        .filter(Boolean);
+
+    if (segments.length < 3) {
+        return null;
+    }
+
+    const accountNumber = segments[0].replace(/\s+/g, '');
+    const bankKey = segments[1].replace(/\s+/g, '').toUpperCase();
+    const accountName = segments.slice(2).join(' ');
+    const bankCode = BANK_NAME_MAP[bankKey];
+
+    if (!accountNumber || !bankCode || !accountName) {
+        return null;
+    }
+
+    return {
+        accountNumber,
+        bankCode,
+        accountName,
+        rawBank: segments[1]
+    };
+};
+
+const buildVietQrUrl = ({ bankCode, accountNumber, accountName, amount, addInfo }) => (
+    `https://img.vietqr.io/image/${bankCode}-${accountNumber}-compact2.png?amount=${encodeURIComponent(amount)}&addInfo=${encodeURIComponent(addInfo)}&accountName=${encodeURIComponent(accountName)}`
+);
+
+const buildSellerPaymentGroups = (items = []) => {
+    const grouped = new Map();
+
+    items.forEach((item) => {
+        const seller = item.product?.seller;
+        const sellerId = seller?.id || `unknown-${item.id}`;
+        const amount = Number(item.product?.price || 0) * Number(item.quantity || 0);
+
+        if (!grouped.has(sellerId)) {
+            grouped.set(sellerId, {
+                sellerId,
+                seller,
+                items: [],
+                subtotal: 0
+            });
+        }
+
+        const current = grouped.get(sellerId);
+        current.items.push(item);
+        current.subtotal += amount;
+    });
+
+    return Array.from(grouped.values()).map((group) => {
+        const bankInfo = parseBankAccount(group.seller?.bankAccount);
+        const sellerLabel =
+            group.seller?.shopName ||
+            [group.seller?.firstName, group.seller?.lastName].filter(Boolean).join(' ') ||
+            `Shop #${group.sellerId}`;
+
+        return {
+            ...group,
+            sellerLabel,
+            bankInfo,
+            qrUrl: bankInfo
+                ? buildVietQrUrl({
+                    ...bankInfo,
+                    amount: Math.round(group.subtotal),
+                    addInfo: `Thanh toan ${sellerLabel}`
+                })
+                : ''
+        };
+    });
+};
+
+const calculateVoucherDiscount = (voucher, subtotal, shippingFee) => {
+    if (!voucher) return 0;
+
+    let discountAmount = 0;
+
+    if (voucher.discountType === 'fixed') {
+        discountAmount += Number(voucher.discountValue || 0);
+    }
+
+    if (voucher.discountType === 'percent') {
+        discountAmount += subtotal * (Number(voucher.discountValue || 0) / 100);
+    }
+
+    if (voucher.maxDiscount) {
+        discountAmount = Math.min(discountAmount, Number(voucher.maxDiscount));
+    }
+
+    if (voucher.shippingDiscount) {
+        discountAmount += Math.min(Number(voucher.shippingDiscount), Number(shippingFee || 0));
+    }
+
+    return Math.max(discountAmount, 0);
+};
 
 function CheckoutPage() {
     const navigate = useNavigate();
@@ -57,7 +179,8 @@ function CheckoutPage() {
         }
     };
 
-    const items = cart?.items || [];
+    const items = useMemo(() => cart?.items || [], [cart]);
+    const sellerPaymentGroups = useMemo(() => buildSellerPaymentGroups(items), [items]);
     const subtotal = items.reduce(
         (sum, item) => sum + Number(item.product?.price || 0) * Number(item.quantity || 0),
         0
@@ -67,18 +190,7 @@ function CheckoutPage() {
     const payment = PAYMENT_OPTIONS.find((option) => option.id === formData.paymentMethod) || PAYMENT_OPTIONS[0];
 
     const discount = useMemo(() => {
-        if (!appliedVoucher) return 0;
-        if (Number(appliedVoucher.shippingDiscount || 0) > 0) {
-            return Math.min(shipping.fee, Number(appliedVoucher.shippingDiscount || 0));
-        }
-        if (appliedVoucher.discountType === 'fixed') {
-            return Number(appliedVoucher.discountValue || 0);
-        }
-        if (appliedVoucher.discountType === 'percent') {
-            const rawDiscount = subtotal * (Number(appliedVoucher.discountValue || 0) / 100);
-            return Math.min(rawDiscount, Number(appliedVoucher.maxDiscount || rawDiscount));
-        }
-        return 0;
+        return calculateVoucherDiscount(appliedVoucher, subtotal, shipping.fee);
     }, [appliedVoucher, shipping.fee, subtotal]);
 
     const total = Math.max(subtotal + shipping.fee - discount, 0);
@@ -274,6 +386,56 @@ function CheckoutPage() {
                             ))}
                         </div>
                     </div>
+
+                    {formData.paymentMethod === 'bank' && (
+                        <div className="border rounded p-4 bg-white mt-4">
+                            <h4 className="mb-3">Ma QR chuyen khoan theo shop</h4>
+                            <div className="alert alert-info">
+                                Neu gio hang co nhieu shop, ban can chuyen khoan tung shop theo ma QR ben duoi truoc khi dat hang.
+                            </div>
+                            <div className="d-flex flex-column gap-4">
+                                {sellerPaymentGroups.map((group) => (
+                                    <div key={group.sellerId} className="border rounded p-3">
+                                        <div className="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-3">
+                                            <div>
+                                                <div className="fw-bold">{group.sellerLabel}</div>
+                                                <div className="text-muted small">
+                                                    Tong tien san pham cua shop: {group.subtotal.toLocaleString('vi-VN')} VND
+                                                </div>
+                                            </div>
+                                            <div className="text-danger fw-bold">
+                                                {group.subtotal.toLocaleString('vi-VN')} VND
+                                            </div>
+                                        </div>
+
+                                        {group.bankInfo ? (
+                                            <div className="row g-3 align-items-center">
+                                                <div className="col-md-4">
+                                                    <img
+                                                        src={group.qrUrl}
+                                                        alt={`QR ${group.sellerLabel}`}
+                                                        className="img-fluid border rounded"
+                                                    />
+                                                </div>
+                                                <div className="col-md-8">
+                                                    <div><strong>Ngan hang:</strong> {group.bankInfo.rawBank}</div>
+                                                    <div><strong>So tai khoan:</strong> {group.bankInfo.accountNumber}</div>
+                                                    <div><strong>Chu tai khoan:</strong> {group.bankInfo.accountName}</div>
+                                                    <div className="text-muted small mt-2">
+                                                        Thong tin shop dang ky: {group.seller?.bankAccount}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <div className="alert alert-warning mb-0">
+                                                Shop nay chua cau hinh tai khoan ngan hang dung dinh dang `So tai khoan - Ma ngan hang - Ten chu tai khoan`, nen chua tao duoc QR.
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 <div className="col-lg-4">

@@ -1,11 +1,12 @@
-import React, { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import React, { useEffect, useRef, useState } from 'react';
+import { useLocation, useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { addToCart, createReview, getProductById, getReviewsByProduct } from '../services/shop';
+import { demoProducts } from '../services/demoData';
+import { addToCart, createReview, getProductById, getReviewEligibility, getReviewsByProduct } from '../services/shop';
 
 function ProductDetail() {
     const { id } = useParams();
-    const navigate = useNavigate();
+    const location = useLocation();
     const { user, isAuthenticated } = useAuth();
     const [product, setProduct] = useState(null);
     const [reviews, setReviews] = useState([]);
@@ -15,13 +16,27 @@ function ProductDetail() {
     const [error, setError] = useState('');
     const [reviewForm, setReviewForm] = useState({ rating: 5, comment: '' });
     const [selectedImage, setSelectedImage] = useState('');
+    const [reviewEligibility, setReviewEligibility] = useState(null);
+    const reviewSectionRef = useRef(null);
 
     useEffect(() => {
         fetchData();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [id]);
+    }, [id, isAuthenticated, user]);
+
+    useEffect(() => {
+        if (!loading && product && location.state?.focusReview) {
+            reviewSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    }, [loading, product, location.state]);
 
     const fetchData = async () => {
+        const fallbackProductFromState = location.state?.product && String(location.state.product.id) === String(id)
+            ? location.state.product
+            : null;
+        const fallbackProductFromDemo = demoProducts.find((item) => String(item.id) === String(id)) || null;
+        const fallbackProduct = fallbackProductFromState || fallbackProductFromDemo;
+
         try {
             setLoading(true);
             const [productRes, reviewsRes] = await Promise.all([
@@ -34,9 +49,36 @@ function ProductDetail() {
                 : [productRes.data?.image].filter(Boolean);
             setSelectedImage(gallery[0] || '');
             setReviews(reviewsRes.data || []);
+            if (isAuthenticated && user) {
+                try {
+                    const eligibilityRes = await getReviewEligibility(id);
+                    setReviewEligibility(eligibilityRes?.data || null);
+                } catch (eligibilityError) {
+                    setReviewEligibility({
+                        canReview: false,
+                        hasPurchased: false,
+                        hasReviewed: false,
+                        message: eligibilityError.response?.data?.message || 'Chua the kiem tra quyen danh gia'
+                    });
+                }
+            } else {
+                setReviewEligibility(null);
+            }
             setError('');
         } catch (err) {
-            setError('Khong the tai chi tiet san pham');
+            if (fallbackProduct) {
+                setProduct(fallbackProduct);
+                const gallery = Array.isArray(fallbackProduct?.images) && fallbackProduct.images.length > 0
+                    ? fallbackProduct.images
+                    : [fallbackProduct?.image].filter(Boolean);
+                setSelectedImage(gallery[0] || '');
+                setReviews([]);
+                setReviewEligibility(null);
+                setError('');
+            } else {
+                setError('Khong the tai chi tiet san pham');
+                setProduct(null);
+            }
         } finally {
             setLoading(false);
         }
@@ -44,7 +86,7 @@ function ProductDetail() {
 
     const handleAddToCart = async () => {
         if (!isAuthenticated || !user) {
-            navigate('/login');
+            window.dispatchEvent(new Event('open-login-modal'));
             return;
         }
 
@@ -62,7 +104,7 @@ function ProductDetail() {
     const handleSubmitReview = async (e) => {
         e.preventDefault();
         if (!isAuthenticated || !user) {
-            navigate('/login');
+            window.dispatchEvent(new Event('open-login-modal'));
             return;
         }
 
@@ -70,7 +112,6 @@ function ProductDetail() {
             setSubmitting(true);
             await createReview({
                 productId: product.id,
-                userId: user.id,
                 rating: Number(reviewForm.rating),
                 comment: reviewForm.comment
             });
@@ -83,8 +124,38 @@ function ProductDetail() {
         }
     };
 
+    const handleOpenChat = () => {
+        if (!isAuthenticated || !user) {
+            window.dispatchEvent(new Event('open-login-modal'));
+            return;
+        }
+
+        const seller = product?.seller;
+        if (!seller?.id || String(seller.id) === String(user.id)) {
+            return;
+        }
+
+        window.dispatchEvent(new CustomEvent('open-chat', {
+            detail: {
+                id: seller.id,
+                firstName: seller.firstName,
+                lastName: seller.lastName,
+                email: seller.email,
+                avatar: seller.avatar || seller.shopLogo || null,
+                role: seller.role,
+                shopName: seller.shopName
+            }
+        }));
+    };
+
     if (loading) return <div className="container py-5">Dang tai...</div>;
     if (!product) return <div className="container py-5">Khong tim thay san pham.</div>;
+
+    const reviewNotice = !isAuthenticated || !user
+        ? 'Dang nhap va mua san pham de co the danh gia.'
+        : reviewEligibility?.message || 'Ban chi co the danh gia sau khi don hang da hoan thanh.';
+    const canReview = Boolean(reviewEligibility?.canReview);
+    const hasReviewed = Boolean(reviewEligibility?.hasReviewed);
 
     return (
         <div className="container py-5">
@@ -149,6 +220,15 @@ function ProductDetail() {
                                 >
                                     Them vao gio hang
                                 </button>
+                                {product?.seller?.id && String(product.seller.id) !== String(user?.id) && (
+                                    <button
+                                        type="button"
+                                        className="btn btn-outline-secondary btn-lg"
+                                        onClick={handleOpenChat}
+                                    >
+                                        Chat voi shop
+                                    </button>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -175,34 +255,57 @@ function ProductDetail() {
                     )}
                 </div>
 
-                <div className="col-lg-5">
-                    <h3 className="mb-3">Viet danh gia</h3>
-                    <form onSubmit={handleSubmitReview} className="border rounded p-3 bg-white">
-                        <div className="mb-3">
-                            <label className="form-label">So sao</label>
-                            <select
-                                className="form-select"
-                                value={reviewForm.rating}
-                                onChange={(e) => setReviewForm({ ...reviewForm, rating: e.target.value })}
-                            >
-                                {[5, 4, 3, 2, 1].map((value) => (
-                                    <option key={value} value={value}>{value} sao</option>
-                                ))}
-                            </select>
+                {!hasReviewed && (
+                    <div className="col-lg-5" ref={reviewSectionRef}>
+                        <h3 className="mb-3">Viet danh gia</h3>
+                        <div className="border rounded p-3 bg-white">
+                            <div className={`alert ${canReview ? 'alert-success' : 'alert-secondary'} mb-3`}>
+                                {reviewNotice}
+                            </div>
+
+                            {canReview ? (
+                                <form onSubmit={handleSubmitReview}>
+                                    <div className="mb-3">
+                                        <label className="form-label">So sao</label>
+                                        <select
+                                            className="form-select"
+                                            value={reviewForm.rating}
+                                            onChange={(e) => setReviewForm({ ...reviewForm, rating: e.target.value })}
+                                        >
+                                            {[5, 4, 3, 2, 1].map((value) => (
+                                                <option key={value} value={value}>{value} sao</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div className="mb-3">
+                                        <label className="form-label">Nhan xet</label>
+                                        <textarea
+                                            className="form-control"
+                                            rows="4"
+                                            value={reviewForm.comment}
+                                            onChange={(e) => setReviewForm({ ...reviewForm, comment: e.target.value })}
+                                            required
+                                        />
+                                    </div>
+                                    <button className="btn btn-dark" disabled={submitting}>Gui danh gia</button>
+                                </form>
+                            ) : (
+                                <button
+                                    type="button"
+                                    className="btn btn-outline-dark"
+                                    onClick={() => {
+                                        if (!isAuthenticated || !user) {
+                                            window.dispatchEvent(new Event('open-login-modal'));
+                                        }
+                                    }}
+                                    disabled={isAuthenticated && user}
+                                >
+                                    Dang nhap de danh gia
+                                </button>
+                            )}
                         </div>
-                        <div className="mb-3">
-                            <label className="form-label">Nhan xet</label>
-                            <textarea
-                                className="form-control"
-                                rows="4"
-                                value={reviewForm.comment}
-                                onChange={(e) => setReviewForm({ ...reviewForm, comment: e.target.value })}
-                                required
-                            />
-                        </div>
-                        <button className="btn btn-dark" disabled={submitting}>Gui danh gia</button>
-                    </form>
-                </div>
+                    </div>
+                )}
             </div>
         </div>
     );

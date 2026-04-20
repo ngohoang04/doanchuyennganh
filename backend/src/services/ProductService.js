@@ -1,6 +1,52 @@
-const { Product, Category, User } = require('../models');
+const { Op } = require('sequelize');
+const { Product, Category, User, Review, OrderItem, Order } = require('../models');
 
 class ProductService {
+    static includeWithStats() {
+        return [
+            { model: Category, as: 'category' },
+            { model: User, as: 'seller' },
+            { model: Review, as: 'reviews', attributes: ['id', 'rating'] },
+            {
+                model: OrderItem,
+                as: 'orderItems',
+                attributes: ['id', 'quantity'],
+                include: [{
+                    model: Order,
+                    as: 'order',
+                    attributes: ['id', 'status'],
+                    where: {
+                        status: {
+                            [Op.notIn]: ['cancelled', 'returned']
+                        }
+                    },
+                    required: false
+                }]
+            }
+        ];
+    }
+
+    static attachStats(product) {
+        const plainProduct = typeof product.toJSON === 'function' ? product.toJSON() : { ...product };
+        const soldCount = Array.isArray(plainProduct.orderItems)
+            ? plainProduct.orderItems.reduce((sum, item) => {
+                if (!item.order) return sum;
+                return sum + Number(item.quantity || 0);
+            }, 0)
+            : 0;
+        const reviewCount = Array.isArray(plainProduct.reviews) ? plainProduct.reviews.length : 0;
+        const averageRating = reviewCount > 0
+            ? plainProduct.reviews.reduce((sum, review) => sum + Number(review.rating || 0), 0) / reviewCount
+            : 0;
+
+        return {
+            ...plainProduct,
+            soldCount,
+            reviewCount,
+            averageRating: Number(averageRating.toFixed(1))
+        };
+    }
+
     static normalizeImagePayload(data) {
         const payload = { ...data };
         const images = Array.isArray(payload.images)
@@ -17,38 +63,33 @@ class ProductService {
     }
 
     static async getAll() {
-        return await Product.findAll({
-            include: [
-                { model: Category, as: 'category' },
-                { model: User, as: 'seller' }
-            ]
+        const products = await Product.findAll({
+            include: this.includeWithStats()
         });
+
+        return products.map((product) => this.attachStats(product));
     }
 
     static async getById(id) {
         const product = await Product.findByPk(id, {
-            include: [
-                { model: Category, as: 'category' },
-                { model: User, as: 'seller' }
-            ]
+            include: this.includeWithStats()
         });
 
         if (!product) {
             throw new Error('Product not found');
         }
 
-        return product;
+        return this.attachStats(product);
     }
 
     static async getMine(currentUser) {
         const where = currentUser.role === 'admin' ? {} : { sellerId: currentUser.id };
-        return await Product.findAll({
+        const products = await Product.findAll({
             where,
-            include: [
-                { model: Category, as: 'category' },
-                { model: User, as: 'seller' }
-            ]
+            include: this.includeWithStats()
         });
+
+        return products.map((product) => this.attachStats(product));
     }
 
     static async create(data) {

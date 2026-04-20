@@ -25,6 +25,38 @@ function Header() {
     }, [isAuthenticated, user]);
 
     useEffect(() => {
+        const openLoginModal = () => {
+            setShowRegisterModal(false);
+            setShowLoginModal(true);
+        };
+
+        const openRegisterModal = () => {
+            setShowLoginModal(false);
+            setShowRegisterModal(true);
+        };
+
+        if (typeof window !== 'undefined') {
+            if (window.sessionStorage.getItem('open-login-modal') === '1') {
+                window.sessionStorage.removeItem('open-login-modal');
+                openLoginModal();
+            }
+
+            if (window.sessionStorage.getItem('open-register-modal') === '1') {
+                window.sessionStorage.removeItem('open-register-modal');
+                openRegisterModal();
+            }
+        }
+
+        window.addEventListener('open-login-modal', openLoginModal);
+        window.addEventListener('open-register-modal', openRegisterModal);
+
+        return () => {
+            window.removeEventListener('open-login-modal', openLoginModal);
+            window.removeEventListener('open-register-modal', openRegisterModal);
+        };
+    }, []);
+
+    useEffect(() => {
         const fetchCartCount = async () => {
             if (!isAuthenticated || !user) {
                 setCartCount(0);
@@ -177,7 +209,10 @@ function Header() {
                                     )}
                                 </div>
                             ) : (
-                                <button className="icon-btn" type="button" title="Tai khoan" onClick={() => setShowLoginModal(true)}>
+                                <button className="icon-btn" type="button" title="Tai khoan" onClick={() => {
+                                    setShowRegisterModal(false);
+                                    setShowLoginModal(true);
+                                }}>
                                     <i className="bi bi-person"></i>
                                 </button>
                             )}
@@ -195,7 +230,14 @@ function Header() {
                 }}
             />
 
-            <Register show={showRegisterModal} onClose={() => setShowRegisterModal(false)} />
+            <Register
+                show={showRegisterModal}
+                onClose={() => setShowRegisterModal(false)}
+                onShowLogin={() => {
+                    setShowRegisterModal(false);
+                    setShowLoginModal(true);
+                }}
+            />
         </div>
     );
 }

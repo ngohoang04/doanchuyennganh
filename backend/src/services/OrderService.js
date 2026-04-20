@@ -2,6 +2,14 @@ const { Order, OrderItem, Cart, CartItem, Product, User } = require('../models')
 const VoucherService = require('./VoucherService');
 
 class OrderService {
+    static async restoreStockForOrderItems(orderItems = []) {
+        for (const item of orderItems) {
+            const product = item.product || await Product.findByPk(item.productId);
+            if (!product) continue;
+            product.stock = Number(product.stock || 0) + Number(item.quantity || 0);
+            await product.save();
+        }
+    }
 
     static async getAll(currentUser) {
         const where = currentUser?.role === 'admin' ? {} : { userId: currentUser.id };
@@ -99,13 +107,17 @@ class OrderService {
             total,
             shippingFee
         );
+        const normalizedPaymentMethod = String(options.paymentMethod || '').toLowerCase();
+        const paymentStatus = normalizedPaymentMethod.includes('chuyen khoan')
+            ? 'awaiting_transfer'
+            : 'pending';
 
         const order = await Order.create({
             userId,
             totalAmount: Math.max(total + shippingFee - discountAmount, 0),
             shippingAddress,
             status: 'pending',
-            paymentStatus: 'pending'
+            paymentStatus
         });
 
         for (const item of cart.items) {
@@ -197,8 +209,98 @@ class OrderService {
             throw new Error('Forbidden');
         }
 
-        await order.update({ status });
-        return order;
+        const nextStatus = String(status || '').toLowerCase();
+        const currentStatus = String(order.status || '').toLowerCase();
+        const allowedStatuses = ['confirmed', 'shipping', 'completed', 'returned'];
+
+        if (!allowedStatuses.includes(nextStatus)) {
+            throw new Error('Invalid order status');
+        }
+
+        if (currentStatus === 'cancelled') {
+            throw new Error('Cancelled order cannot be updated');
+        }
+
+        if (currentStatus === 'returned' && nextStatus !== 'returned') {
+            throw new Error('Returned order cannot be updated');
+        }
+
+        if (nextStatus === 'returned' && currentStatus !== 'returned') {
+            await this.restoreStockForOrderItems(items);
+        }
+
+        await order.update({
+            status: nextStatus,
+            paymentStatus: nextStatus === 'returned' ? 'returned' : order.paymentStatus
+        });
+
+        return this.getById({ id: order.userId, role: 'user' }, order.id);
+    }
+
+    static async cancelByUser(currentUser, orderId) {
+        const order = await Order.findByPk(orderId, {
+            include: [
+                {
+                    model: OrderItem,
+                    as: 'orderItems',
+                    include: [{ model: Product, as: 'product' }]
+                }
+            ]
+        });
+
+        if (!order) {
+            throw new Error('Order not found');
+        }
+
+        if (currentUser.role !== 'admin' && String(order.userId) !== String(currentUser.id)) {
+            throw new Error('Forbidden');
+        }
+
+        if (!['pending', 'confirmed'].includes(String(order.status || '').toLowerCase())) {
+            throw new Error('Order cannot be cancelled');
+        }
+
+        await this.restoreStockForOrderItems(order.orderItems || []);
+
+        await order.update({
+            status: 'cancelled',
+            paymentStatus: 'cancelled'
+        });
+
+        return this.getById(currentUser, orderId);
+    }
+
+    static async returnByUser(currentUser, orderId) {
+        const order = await Order.findByPk(orderId, {
+            include: [
+                {
+                    model: OrderItem,
+                    as: 'orderItems',
+                    include: [{ model: Product, as: 'product' }]
+                }
+            ]
+        });
+
+        if (!order) {
+            throw new Error('Order not found');
+        }
+
+        if (currentUser.role !== 'admin' && String(order.userId) !== String(currentUser.id)) {
+            throw new Error('Forbidden');
+        }
+
+        if (String(order.status || '').toLowerCase() !== 'completed') {
+            throw new Error('Order cannot be returned');
+        }
+
+        await this.restoreStockForOrderItems(order.orderItems || []);
+
+        await order.update({
+            status: 'returned',
+            paymentStatus: 'returned'
+        });
+
+        return this.getById(currentUser, orderId);
     }
 }
 

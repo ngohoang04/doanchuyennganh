@@ -51,6 +51,17 @@ export const AuthProvider = ({ children }) => {
         }
     }, []);
 
+    const socialLogin = useCallback(async (provider, accessToken) => {
+        try {
+            const data = await AuthService.socialLogin(provider, accessToken);
+            setUser(data.user);
+            setIsAuthenticated(true);
+            return data;
+        } catch (error) {
+            throw error;
+        }
+    }, []);
+
     const logout = useCallback(() => {
         AuthService.logout();
         setUser(null);
@@ -92,6 +103,7 @@ export const AuthProvider = ({ children }) => {
         loading,
         login,
         register,
+        socialLogin,
         logout,
         updateUser,
         submitSellerRequest,

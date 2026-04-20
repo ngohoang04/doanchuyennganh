@@ -4,6 +4,29 @@ import { demoCategories, demoProducts } from '../services/demoData';
 import { getCategories, getProducts } from '../services/shop';
 import './home.css';
 
+const getDerivedSoldCount = (product) => {
+    if (typeof product.soldCount === 'number') return product.soldCount;
+    if (Array.isArray(product.orderItems)) {
+        return product.orderItems.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
+    }
+    return 0;
+};
+
+const getDerivedReviewCount = (product) => {
+    if (typeof product.reviewCount === 'number') return product.reviewCount;
+    if (Array.isArray(product.reviews)) return product.reviews.length;
+    return 0;
+};
+
+const getDerivedAverageRating = (product) => {
+    if (typeof product.averageRating === 'number') return product.averageRating;
+    if (Array.isArray(product.reviews) && product.reviews.length > 0) {
+        const total = product.reviews.reduce((sum, review) => sum + Number(review.rating || 0), 0);
+        return Number((total / product.reviews.length).toFixed(1));
+    }
+    return 0;
+};
+
 function Home() {
     const [categories, setCategories] = useState([]);
     const [featuredProducts, setFeaturedProducts] = useState([]);
@@ -50,6 +73,10 @@ function Home() {
         { id: 3, icon: 'bi-shield-check', title: 'Bao hanh chinh hang', description: 'San pham co bao hanh ro rang tu nha ban' },
         { id: 4, icon: 'bi-clock', title: 'Giao hang nhanh', description: 'Xu ly don nhanh va ho tro tren toan quoc' }
     ];
+
+    const openProductDetail = (product) => {
+        navigate(`/product/${product.id}`, { state: { product } });
+    };
 
     return (
         <div className="home-container">
@@ -110,20 +137,51 @@ function Home() {
 
                 <div className="categories-grid">
                     {featuredProducts.map((product) => (
-                        <div key={product.id} className="category-card">
-                            <div className="category-image">
-                                <img src={product.image || `https://picsum.photos/seed/product-${product.id}/600/420`} alt={product.name} />
-                                <div className="category-overlay">
-                                    <button className="category-btn" onClick={() => navigate(`/product/${product.id}`)}>
-                                        Xem chi tiet
-                                    </button>
+                        (() => {
+                            const soldCount = getDerivedSoldCount(product);
+                            const reviewCount = getDerivedReviewCount(product);
+                            const averageRating = getDerivedAverageRating(product);
+
+                            return (
+                                <div
+                                    key={product.id}
+                                    className="category-card product-card-clickable"
+                                    role="button"
+                                    tabIndex={0}
+                                    onClick={() => openProductDetail(product)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter' || e.key === ' ') {
+                                            e.preventDefault();
+                                            openProductDetail(product);
+                                        }
+                                    }}
+                                >
+                                    <div className="category-image">
+                                        <img src={product.image || `https://picsum.photos/seed/product-${product.id}/600/420`} alt={product.name} />
+                                        <div className="category-overlay">
+                                            <button
+                                                className="category-btn"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    openProductDetail(product);
+                                                }}
+                                            >
+                                                Xem chi tiet
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div className="category-info">
+                                        <h3>{product.name}</h3>
+                                        <p className="products-meta">
+                                            <span>{soldCount} da ban</span>
+                                            {averageRating > 0 && <span>{averageRating}/5 sao</span>}
+                                            <span>{reviewCount} danh gia</span>
+                                        </p>
+                                        <p>{Number(product.price || 0).toLocaleString('vi-VN')} VND</p>
+                                    </div>
                                 </div>
-                            </div>
-                            <div className="category-info">
-                                <h3>{product.name}</h3>
-                                <p>{Number(product.price || 0).toLocaleString('vi-VN')} VND</p>
-                            </div>
-                        </div>
+                            );
+                        })()
                     ))}
                 </div>
             </section>

@@ -18,10 +18,18 @@ function AdminProducts() {
         categoryId: '',
         stock: ''
     });
+    const totalStock = products.reduce((sum, product) => sum + Number(product.stock || 0), 0);
 
     useEffect(() => {
         fetchProducts();
         fetchCategories();
+
+        const handleOrdersUpdated = () => {
+            fetchProducts();
+        };
+
+        window.addEventListener('orders-updated', handleOrdersUpdated);
+        return () => window.removeEventListener('orders-updated', handleOrdersUpdated);
     }, []);
 
     const fetchProducts = async () => {
@@ -123,7 +131,7 @@ function AdminProducts() {
             <div className="admin-header-section">
                 <div>
                     <h2>Quan ly san pham</h2>
-                    <p>Tong cong: {products.length} san pham</p>
+                    <p>Tong cong: {products.length} san pham | Ton kho: {totalStock}</p>
                 </div>
                 <button className="btn btn-primary" onClick={openCreate}>
                     <i className="bi bi-plus-circle"></i> Them san pham

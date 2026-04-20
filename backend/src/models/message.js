@@ -24,7 +24,12 @@ module.exports = (sequelize, DataTypes) => {
   Message.init({
     senderId: DataTypes.INTEGER,
     receiverId: DataTypes.INTEGER,
-    content: DataTypes.TEXT
+    content: DataTypes.TEXT,
+    isRead: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false
+    }
   }, {
     sequelize,
     modelName: 'Message',

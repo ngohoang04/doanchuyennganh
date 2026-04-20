@@ -6,14 +6,11 @@ function AdminDashboard() {
         totalUsers: 0,
         totalProducts: 0,
         totalOrders: 0,
-        totalRevenue: 0
+        totalRevenue: 0,
+        totalStock: 0
     });
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
-
-    useEffect(() => {
-        fetchStats();
-    }, []);
 
     const fetchStats = async () => {
         try {
@@ -26,13 +23,22 @@ function AdminDashboard() {
                 api.get('/orders').catch(err => ({ data: [] }))
             ]);
 
-            const totalRevenue = ordersRes.data.reduce((sum, order) => sum + (order.totalAmount || 0), 0);
+            const totalRevenue = (ordersRes.data || []).reduce((sum, order) => {
+                return String(order.status || '').toLowerCase() === 'completed'
+                    ? sum + Number(order.totalAmount || 0)
+                    : sum;
+            }, 0);
+            const totalStock = (productsRes.data || []).reduce(
+                (sum, product) => sum + Number(product.stock || 0),
+                0
+            );
 
             setStats({
                 totalUsers: usersRes.data?.length || 0,
                 totalProducts: productsRes.data?.length || 0,
                 totalOrders: ordersRes.data?.length || 0,
-                totalRevenue
+                totalRevenue,
+                totalStock
             });
         } catch (err) {
             console.error('Error fetching stats:', err);
@@ -41,6 +47,17 @@ function AdminDashboard() {
             setLoading(false);
         }
     };
+
+    useEffect(() => {
+        fetchStats();
+
+        const handleOrdersUpdated = () => {
+            fetchStats();
+        };
+
+        window.addEventListener('orders-updated', handleOrdersUpdated);
+        return () => window.removeEventListener('orders-updated', handleOrdersUpdated);
+    }, []);
 
     const StatCard = ({ icon, title, value, color }) => (
         <div className="stat-card" style={{ borderLeftColor: color }}>
@@ -95,6 +112,12 @@ function AdminDashboard() {
                             maximumFractionDigits: 0
                         }).format(stats.totalRevenue)}
                         color="#14a314"
+                    />
+                    <StatCard
+                        icon="bi-archive"
+                        title="Tong ton kho"
+                        value={stats.totalStock}
+                        color="#0d6efd"
                     />
                 </div>
             )}
