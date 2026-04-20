@@ -16,10 +16,12 @@ const orderRoutes = require('./src/routes/order.routes');
 const orderItemRoutes = require('./src/routes/orderItem.routes');
 const reviewRoutes = require('./src/routes/review.routes');
 const messageRoutes = require('./src/routes/message.routes');
+const voucherRoutes = require('./src/routes/voucher.routes');
 
 // ===== MIDDLEWARE =====
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // ===== ROUTES =====
 app.use('/api/auth', authRoutes);
@@ -32,6 +34,7 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/order-items', orderItemRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/messages', messageRoutes);
+app.use('/api/vouchers', voucherRoutes);
 
 // ===== TEST ROUTE =====
 app.get('/', (req, res) => {

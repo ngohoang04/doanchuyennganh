@@ -37,7 +37,42 @@ module.exports = (sequelize, DataTypes) => {
     name: DataTypes.STRING,
     price: DataTypes.DECIMAL,
     description: DataTypes.TEXT,
-    image: DataTypes.STRING,
+    image: {
+      type: DataTypes.TEXT('long'),
+      get() {
+        const rawValue = this.getDataValue('image');
+        if (!rawValue) return null;
+        try {
+          const parsed = JSON.parse(rawValue);
+          return Array.isArray(parsed) ? (parsed[0] || null) : rawValue;
+        } catch (error) {
+          return rawValue;
+        }
+      },
+      set(value) {
+        if (Array.isArray(value)) {
+          this.setDataValue('image', value.length ? JSON.stringify(value) : null);
+        } else {
+          this.setDataValue('image', value || null);
+        }
+      }
+    },
+    images: {
+      type: DataTypes.VIRTUAL,
+      get() {
+        const rawValue = this.getDataValue('image');
+        if (!rawValue) return [];
+        try {
+          const parsed = JSON.parse(rawValue);
+          return Array.isArray(parsed) ? parsed : [rawValue];
+        } catch (error) {
+          return [rawValue];
+        }
+      },
+      set(value) {
+        this.setDataValue('image', Array.isArray(value) ? (value.length ? JSON.stringify(value) : null) : value || null);
+      }
+    },
     stock: DataTypes.INTEGER,
     categoryId: DataTypes.INTEGER,
     sellerId: DataTypes.INTEGER

@@ -22,7 +22,10 @@ class ReviewController {
 
     static async create(req, res) {
         try {
-            const review = await ReviewService.create(req.body);
+            const review = await ReviewService.create({
+                ...req.body,
+                userId: req.user.id
+            });
             res.status(201).json(review);
         } catch (err) {
             res.status(400).json({ message: err.message });

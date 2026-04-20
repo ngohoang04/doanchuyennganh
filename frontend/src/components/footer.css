@@ -1,0 +1,22 @@
+.footer {
+  background-color: #1a1a1a;
+  color: #fff;
+  margin-top: auto;
+}
+
+.footer ul li {
+  margin-bottom: 8px;
+}
+
+.footer a {
+  transition: all 0.3s ease;
+}
+
+.footer a:hover {
+  color: #3b82f6 !important;
+}
+
+.footer-bottom {
+  background-color: #0d0d0d;
+  border-top: 1px solid #333;
+}

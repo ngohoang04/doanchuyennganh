@@ -4,7 +4,7 @@ class OrderController {
 
     static async getAll(req, res) {
         try {
-            const orders = await OrderService.getAll();
+            const orders = await OrderService.getAll(req.user);
             res.json(orders);
         } catch (err) {
             res.status(500).json({ message: err.message });
@@ -13,10 +13,11 @@ class OrderController {
 
     static async getById(req, res) {
         try {
-            const order = await OrderService.getById(req.params.id);
+            const order = await OrderService.getById(req.user, req.params.id);
             res.json(order);
         } catch (err) {
-            res.status(404).json({ message: err.message });
+            const statusCode = err.message === 'Forbidden' ? 403 : 404;
+            res.status(statusCode).json({ message: err.message });
         }
     }
 
@@ -49,13 +50,35 @@ class OrderController {
 
     static async checkout(req, res) {
         try {
-            const { userId, shippingAddress } = req.body;
-
-            const order = await OrderService.checkout(userId, shippingAddress);
+            const { shippingAddress } = req.body;
+            const order = await OrderService.checkout(req.user.id, shippingAddress);
 
             res.json(order);
         } catch (err) {
             res.status(400).json({ message: err.message });
+        }
+    }
+
+    static async getSellerOrders(req, res) {
+        try {
+            const orders = await OrderService.getSellerOrders(req.user);
+            res.json(orders);
+        } catch (err) {
+            res.status(500).json({ message: err.message });
+        }
+    }
+
+    static async updateSellerOrderStatus(req, res) {
+        try {
+            const order = await OrderService.updateSellerOrderStatus(
+                req.user,
+                req.params.id,
+                req.body.status
+            );
+            res.json(order);
+        } catch (err) {
+            const statusCode = err.message === 'Forbidden' ? 403 : 400;
+            res.status(statusCode).json({ message: err.message });
         }
     }
 }

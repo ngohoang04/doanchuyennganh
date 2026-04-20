@@ -1,4 +1,4 @@
-const { CartItem, Product } = require('../models');
+const { CartItem, Product, Cart } = require('../models');
 
 class CartItemService {
 
@@ -33,11 +33,16 @@ class CartItemService {
     }
 
     // Cập nhật số lượng
-    static async updateQuantity(id, quantity) {
+    static async updateQuantity(userId, id, quantity) {
         const item = await CartItem.findByPk(id);
 
         if (!item) {
             throw new Error('CartItem not found');
+        }
+
+        const cart = await Cart.findByPk(item.cartId);
+        if (!cart || String(cart.userId) !== String(userId)) {
+            throw new Error('Forbidden');
         }
 
         if (quantity <= 0) {

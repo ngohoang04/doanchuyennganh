@@ -33,12 +33,14 @@ class CartItemController {
         try {
             const { quantity } = req.body;
             const item = await CartItemService.updateQuantity(
+                req.user.id,
                 req.params.id,
                 quantity
             );
             res.json(item);
         } catch (err) {
-            res.status(400).json({ message: err.message });
+            const statusCode = err.message === 'Forbidden' ? 403 : 400;
+            res.status(statusCode).json({ message: err.message });
         }
     }
 

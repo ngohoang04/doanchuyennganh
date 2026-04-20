@@ -1,24 +1,45 @@
-const { Cart, CartItem } = require('../models');
+const { Cart, CartItem, Product } = require('../models');
 
 class CartService {
 
     static async getAll() {
         return await Cart.findAll({
-            include: {
-                model: CartItem,
-                as: 'items'
-            }
+            include: [
+                {
+                    model: CartItem,
+                    as: 'items',
+                    include: [{ model: Product, as: 'product' }]
+                }
+            ]
         });
     }
 
     static async getCart(userId) {
-        return await Cart.findOne({
+        let cart = await Cart.findOne({
             where: { userId },
-            include: {
-                model: CartItem,
-                as: 'items'
-            }
+            include: [
+                {
+                    model: CartItem,
+                    as: 'items',
+                    include: [{ model: Product, as: 'product' }]
+                }
+            ]
         });
+
+        if (!cart) {
+            cart = await Cart.create({ userId });
+            cart = await Cart.findByPk(cart.id, {
+                include: [
+                    {
+                        model: CartItem,
+                        as: 'items',
+                        include: [{ model: Product, as: 'product' }]
+                    }
+                ]
+            });
+        }
+
+        return cart;
     }
 
     static async create(data) {
@@ -37,6 +58,16 @@ class CartService {
     }
 
     static async addToCart(userId, productId, quantity) {
+        const normalizedQuantity = Number(quantity) || 1;
+        if (normalizedQuantity <= 0) {
+            throw new Error('Quantity must be greater than 0');
+        }
+
+        const product = await Product.findByPk(productId);
+        if (!product) {
+            throw new Error('Product not found');
+        }
+
         let cart = await Cart.findOne({ where: { userId } });
 
         if (!cart) {
@@ -48,22 +79,27 @@ class CartService {
         });
 
         if (item) {
-            item.quantity += quantity;
+            item.quantity += normalizedQuantity;
             await item.save();
         } else {
             item = await CartItem.create({
                 cartId: cart.id,
                 productId,
-                quantity
+                quantity: normalizedQuantity
             });
         }
 
-        return item;
+        return await this.getCart(userId);
     }
 
-    static async removeItem(cartItemId) {
+    static async removeItem(userId, cartItemId) {
         const item = await CartItem.findByPk(cartItemId);
         if (!item) throw new Error('Item not found');
+
+        const cart = await Cart.findByPk(item.cartId);
+        if (!cart || String(cart.userId) !== String(userId)) {
+            throw new Error('Forbidden');
+        }
 
         await item.destroy();
         return true;

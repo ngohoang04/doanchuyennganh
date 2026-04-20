@@ -48,8 +48,11 @@ const validatePost = (req, res, next) => {
 
 // User validation
 const validateUser = (req, res, next) => {
-    if (!req.body.username || req.body.username.trim().length === 0) {
-        return res.status(400).json({ message: 'Username is required' });
+    if (!req.body.firstName || req.body.firstName.trim().length === 0) {
+        return res.status(400).json({ message: 'First name is required' });
+    }
+    if (!req.body.lastName || req.body.lastName.trim().length === 0) {
+        return res.status(400).json({ message: 'Last name is required' });
     }
     if (!req.body.email || !validateEmail(req.body.email)) {
         return res.status(400).json({ message: 'Valid email is required' });
@@ -59,8 +62,11 @@ const validateUser = (req, res, next) => {
 
 // Auth validation
 const validateRegister = (req, res, next) => {
-    if (!req.body.username || req.body.username.trim().length === 0) {
-        return res.status(400).json({ message: 'Username is required' });
+    if (!req.body.firstName || req.body.firstName.trim().length === 0) {
+        return res.status(400).json({ message: 'First name is required' });
+    }
+    if (!req.body.lastName || req.body.lastName.trim().length === 0) {
+        return res.status(400).json({ message: 'Last name is required' });
     }
     if (!req.body.email || !validateEmail(req.body.email)) {
         return res.status(400).json({ message: 'Valid email is required' });

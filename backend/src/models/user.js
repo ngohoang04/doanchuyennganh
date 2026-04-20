@@ -25,7 +25,19 @@ module.exports = (sequelize, DataTypes) => {
     password: DataTypes.STRING,
     firstName: DataTypes.STRING,
     lastName: DataTypes.STRING,
-    role: DataTypes.STRING
+    phone: DataTypes.STRING,
+    avatar: DataTypes.TEXT,
+    role: DataTypes.STRING,
+    sellerStatus: DataTypes.STRING,
+    shopName: { type: DataTypes.STRING, field: 'shop_name' },
+    shopDescription: { type: DataTypes.TEXT, field: 'shop_description' },
+    shopAddress: { type: DataTypes.STRING, field: 'shop_address' },
+    idCardNumber: { type: DataTypes.STRING, field: 'id_card_number' },
+    idCardFront: { type: DataTypes.TEXT, field: 'id_card_front' },
+    idCardBack: { type: DataTypes.TEXT, field: 'id_card_back' },
+    businessLicense: { type: DataTypes.TEXT, field: 'business_license' },
+    bankAccount: { type: DataTypes.STRING, field: 'bank_account' },
+    shopLogo: { type: DataTypes.TEXT, field: 'shop_logo' }
   }, {
     sequelize,
     modelName: 'User',

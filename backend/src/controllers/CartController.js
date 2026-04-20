@@ -13,6 +13,9 @@ class CartController {
 
     static async getCart(req, res) {
         try {
+            if (String(req.user.id) !== String(req.params.userId) && req.user.role !== 'admin') {
+                return res.status(403).json({ message: 'Forbidden' });
+            }
             const cart = await CartService.getCart(req.params.userId);
             res.json(cart);
         } catch (err) {
@@ -40,9 +43,9 @@ class CartController {
 
     static async addToCart(req, res) {
         try {
-            const { userId, productId, quantity } = req.body;
-            const item = await CartService.addToCart(userId, productId, quantity);
-            res.json(item);
+            const { productId, quantity } = req.body;
+            const cart = await CartService.addToCart(req.user.id, productId, quantity);
+            res.json(cart);
         } catch (err) {
             res.status(400).json({ message: err.message });
         }
@@ -50,10 +53,11 @@ class CartController {
 
     static async removeItem(req, res) {
         try {
-            await CartService.removeItem(req.params.id);
+            await CartService.removeItem(req.user.id, req.params.id);
             res.json({ message: 'Removed' });
         } catch (err) {
-            res.status(404).json({ message: err.message });
+            const statusCode = err.message === 'Forbidden' ? 403 : 404;
+            res.status(statusCode).json({ message: err.message });
         }
     }
 }
