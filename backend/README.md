@@ -1,43 +1,233 @@
-# Backend Setup
+# 🛒 E-commerce Backend API (Node.js + Sequelize)
 
-## Environment
+## 📌 Giới thiệu
 
-Create `backend/.env` from `backend/.env.example`.
+Đây là dự án backend cho hệ thống **thương mại điện tử (E-commerce)** được xây dựng bằng:
 
-Required for password reset email:
+* Node.js (Express)
+* Sequelize ORM
+* MySQL
+* Kiến trúc MVC (Model - View - Controller)
 
-```env
-FRONTEND_URL=http://localhost:3000
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_USER=your_email@gmail.com
-SMTP_PASS=your_app_password
-MAIL_FROM=TechShop <your_email@gmail.com>
+Hệ thống cung cấp API cho các chức năng:
+
+* Quản lý người dùng
+* Quản lý sản phẩm & danh mục
+* Giỏ hàng (Cart)
+* Đơn hàng (Order)
+* Đánh giá (Review)
+* Tin nhắn (Message)
+
+---
+
+## 🧱 Công nghệ sử dụng
+
+* Node.js
+* Express.js
+* Sequelize
+* MySQL
+* RESTful API
+
+---
+
+## 📁 Cấu trúc project
+
+```
+src/
+│── controllers/
+│── services/
+│── models/
+│── routes/
+│── middleware/
 ```
 
-## Gmail note
+---
 
-If you use Gmail, `SMTP_PASS` must be an App Password, not your normal account password.
+## 🗄️ Database Schema
 
-## Install
+### Các bảng chính:
+
+* Users
+* Products
+* Categories
+* Carts
+* CartItems
+* Orders
+* OrderItems
+* Reviews
+* Messages
+
+### Quan hệ:
+
+* User → Order (1-N)
+* User → Cart (1-1)
+* Product → Category (N-1)
+* Cart → CartItem (1-N)
+* Order → OrderItem (1-N)
+
+---
+
+## 🚀 Cài đặt
+
+### 1. Clone project
 
 ```bash
-cd backend
+git clone <repo-url>
+cd project
+```
+
+### 2. Cài dependency
+
+```bash
 npm install
 ```
 
-## Migrate
+### 3. Cấu hình database
 
-Password reset requires the new migration:
+File: `config/config.json`
+
+```json
+{
+  "development": {
+    "username": "root",
+    "password": "password",
+    "database": "tmdt_db",
+    "host": "127.0.0.1",
+    "dialect": "mysql"
+  }
+}
+```
+
+---
+
+### 4. Tạo database
+
+```sql
+CREATE DATABASE tmdt_db;
+```
+
+---
+
+### 5. Chạy migration
 
 ```bash
 npx sequelize-cli db:migrate
 ```
 
-## Run
+---
+
+### 6. Chạy server
 
 ```bash
 npm start
 ```
 
-If SMTP is not configured and `NODE_ENV` is not `production`, the forgot-password flow will show the reset link directly in the UI for local testing.
+---
+
+## 📡 API Endpoints
+
+### 👤 User
+
+```
+GET    /api/users
+POST   /api/users
+PUT    /api/users/:id
+DELETE /api/users/:id
+```
+
+---
+
+### 📦 Product
+
+```
+GET    /api/products
+POST   /api/products
+PUT    /api/products/:id
+DELETE /api/products/:id
+```
+
+---
+
+### 🏷 Category
+
+```
+GET    /api/categories
+POST   /api/categories
+```
+
+---
+
+### 🛒 Cart
+
+```
+GET    /api/cart/:userId
+POST   /api/cart/add
+DELETE /api/cart/item/:id
+```
+
+---
+
+### 📦 Order
+
+```
+POST   /api/orders/checkout
+```
+
+---
+
+### ⭐ Review
+
+```
+GET    /api/reviews
+POST   /api/reviews
+```
+
+---
+
+### 💬 Message
+
+```
+GET    /api/messages/:senderId/:receiverId
+POST   /api/messages
+```
+
+---
+
+## 🔄 Kiến trúc MVC
+
+* **Model**: Sequelize models (database)
+* **Controller**: xử lý request/response
+* **Service**: business logic
+* **Route**: định nghĩa API
+
+Flow:
+
+```
+Route → Controller → Service → Model → Database
+```
+
+---
+
+## ⚠️ Lưu ý
+
+* Sử dụng `INTEGER.UNSIGNED` cho khóa ngoại để tránh lỗi FK
+* Dùng `DECIMAL(10,2)` cho giá tiền
+* Không lưu password dạng plain text trong production
+
+---
+
+## 🎯 Kết quả
+
+* Xây dựng API backend hoàn chỉnh cho hệ thống TMĐT
+* Áp dụng kiến trúc MVC
+* Hiểu cách thiết kế database và quan hệ
+
+---
+
+## 📌 Tác giả
+
+* Sinh viên: Ngô Trọng Hoàng
+* Môn học: Đồ án chuyên ngành
+* Giảng viên: (Tên GV)
+
+---
