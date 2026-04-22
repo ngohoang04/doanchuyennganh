@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getCart } from '../services/shop';
@@ -12,6 +12,8 @@ function Header() {
     const [showLoginModal, setShowLoginModal] = useState(false);
     const [showRegisterModal, setShowRegisterModal] = useState(false);
     const [cartCount, setCartCount] = useState(0);
+    const searchInputRef = useRef(null);
+    const userMenuRef = useRef(null);
     const navigate = useNavigate();
     const { user, isAuthenticated, logout } = useAuth();
     const displayName = user?.lastName || user?.firstName || user?.email;
@@ -94,11 +96,29 @@ function Header() {
         };
     }, [isAuthenticated, user]);
 
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
+                setShowUserMenu(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
     const navigateSearch = () => {
-        const q = document.getElementById('header-search-input')?.value || '';
+        const q = searchInputRef.current?.value || '';
         if (q.trim()) navigate(`/products?q=${encodeURIComponent(q.trim())}`);
         else navigate('/products');
         setCollapsed(true);
+    };
+
+    const handleSearchKeyDown = (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            navigateSearch();
+        }
     };
 
     const handleLogout = () => {
@@ -108,7 +128,7 @@ function Header() {
     };
 
     return (
-            <div>
+        <div>
             <div className="top-bar text-white text-center py-2">
                 <small><i className="bi bi-star-fill"></i> Ưu đãi công nghệ chính hãng, giao nhanh trên toàn quốc</small>
             </div>
@@ -136,8 +156,10 @@ function Header() {
                                 <input
                                     type="text"
                                     id="header-search-input"
+                                    ref={searchInputRef}
                                     className="form-control search-input"
                                     placeholder="Tìm kiếm sản phẩm..."
+                                    onKeyDown={handleSearchKeyDown}
                                 />
                                 <button className="btn btn-search" type="button" onClick={navigateSearch}>
                                     <i className="bi bi-search"></i>
@@ -147,20 +169,18 @@ function Header() {
 
                         <div className="d-flex gap-3 align-items-center header-icons">
                             {isAuthenticated && user && (
-                                <>
-                                    <button className="icon-btn position-relative" type="button" title="Giỏ hàng" onClick={() => navigate('/cart')}>
-                                        <i className="bi bi-cart3"></i>
-                                        {cartCount > 0 && <span className="badge">{cartCount}</span>}
-                                    </button>
-                                </>
+                                <button className="icon-btn position-relative" type="button" title="Giỏ hàng" onClick={() => navigate('/cart')}>
+                                    <i className="bi bi-cart3"></i>
+                                    {cartCount > 0 && <span className="badge">{cartCount}</span>}
+                                </button>
                             )}
 
                             {isAuthenticated && user ? (
-                                <div className="user-menu-container">
+                                <div className="user-menu-container" ref={userMenuRef}>
                                     <button
                                         className="user-header-btn d-flex align-items-center gap-2"
                                         type="button"
-                                        onClick={() => setShowUserMenu(!showUserMenu)}
+                                        onClick={() => setShowUserMenu((prev) => !prev)}
                                         title={displayName}
                                     >
                                         {user.avatar ? (
@@ -209,10 +229,15 @@ function Header() {
                                     )}
                                 </div>
                             ) : (
-                                <button className="icon-btn" type="button" title="Tài khoản" onClick={() => {
-                                    setShowRegisterModal(false);
-                                    setShowLoginModal(true);
-                                }}>
+                                <button
+                                    className="icon-btn"
+                                    type="button"
+                                    title="Tài khoản"
+                                    onClick={() => {
+                                        setShowRegisterModal(false);
+                                        setShowLoginModal(true);
+                                    }}
+                                >
                                     <i className="bi bi-person"></i>
                                 </button>
                             )}

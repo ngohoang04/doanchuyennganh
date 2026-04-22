@@ -7,6 +7,14 @@ const EMPTY_FORM = {
     image: ''
 };
 
+const readFileAsDataUrl = (file) =>
+    new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(new Error('Không thể đọc tệp hình ảnh'));
+        reader.readAsDataURL(file);
+    });
+
 function AdminCategories() {
     const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -51,6 +59,25 @@ function AdminCategories() {
         setShowModal(false);
         setSelectedCategory(null);
         setFormData(EMPTY_FORM);
+    };
+
+    const handleImageChange = async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        try {
+            const image = await readFileAsDataUrl(file);
+            setFormData((prev) => ({ ...prev, image }));
+            setError('');
+        } catch (err) {
+            setError(err.message || 'Không thể đọc tệp hình ảnh');
+        } finally {
+            e.target.value = '';
+        }
+    };
+
+    const handleRemoveImage = () => {
+        setFormData((prev) => ({ ...prev, image: '' }));
     };
 
     const handleSave = async () => {
@@ -102,7 +129,7 @@ function AdminCategories() {
             <div className="admin-header-section">
                 <div>
                     <h2>Quản lý danh mục</h2>
-                    <p>Tạo mới hoặc cập nhật tên và ảnh đại diện cho từng danh mục.</p>
+                    <p>Tạo mới hoặc cập nhật tên và ảnh đại diện cho từng danh mục bằng cách chọn ảnh từ thư mục trên máy.</p>
                 </div>
                 <button className="btn btn-primary" onClick={openCreate}>
                     <i className="bi bi-plus-circle"></i> Thêm danh mục
@@ -177,30 +204,39 @@ function AdminCategories() {
                             </div>
 
                             <div className="form-group mb-3">
-                                <label>URL ảnh danh mục</label>
+                                <label>Ảnh danh mục</label>
                                 <input
-                                    type="text"
+                                    type="file"
                                     className="form-control"
-                                    value={formData.image}
-                                    onChange={(e) => setFormData((prev) => ({ ...prev, image: e.target.value }))}
-                                    placeholder="https://..."
+                                    accept="image/*"
+                                    onChange={handleImageChange}
                                 />
+                                <small className="text-muted mt-2 d-block">
+                                    Chọn ảnh trực tiếp từ thư mục trên máy. Ảnh sẽ được lưu cùng danh mục.
+                                </small>
                             </div>
 
-                            <div className="form-group">
-                                <label>Xem trước</label>
-                                <img
-                                    src={formData.image.trim() || 'https://picsum.photos/seed/category-preview/600/320'}
-                                    alt={formData.name || 'Danh mục'}
-                                    style={{
-                                        width: '100%',
-                                        maxHeight: '220px',
-                                        objectFit: 'cover',
-                                        borderRadius: '12px',
-                                        border: '1px solid #e0e0e0'
-                                    }}
-                                />
-                            </div>
+                            {formData.image && (
+                                <div className="form-group">
+                                    <div className="d-flex justify-content-between align-items-center mb-2">
+                                        <label className="mb-0">Xem trước</label>
+                                        <button type="button" className="btn btn-sm btn-outline-danger" onClick={handleRemoveImage}>
+                                            Xóa ảnh
+                                        </button>
+                                    </div>
+                                    <img
+                                        src={formData.image.trim()}
+                                        alt={formData.name || 'Danh mục'}
+                                        style={{
+                                            width: '100%',
+                                            maxHeight: '220px',
+                                            objectFit: 'cover',
+                                            borderRadius: '12px',
+                                            border: '1px solid #e0e0e0'
+                                        }}
+                                    />
+                                </div>
+                            )}
                         </div>
                         <div className="modal-footer">
                             <button className="btn btn-secondary" onClick={closeModal}>Hủy</button>

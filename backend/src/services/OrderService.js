@@ -107,8 +107,14 @@ class OrderService {
             total,
             shippingFee
         );
-        const normalizedPaymentMethod = String(options.paymentMethod || '').toLowerCase();
-        const paymentStatus = normalizedPaymentMethod.includes('chuyen khoan')
+        const normalizedPaymentMethod = String(options.paymentMethodCode || options.paymentMethod || '').toLowerCase();
+        const isBankTransfer =
+            normalizedPaymentMethod.includes('bank') ||
+            normalizedPaymentMethod.includes('transfer') ||
+            normalizedPaymentMethod.includes('qr') ||
+            normalizedPaymentMethod.includes('chuyển khoản') ||
+            normalizedPaymentMethod.includes('chuyen khoan');
+        const paymentStatus = isBankTransfer
             ? 'awaiting_transfer'
             : 'pending';
 

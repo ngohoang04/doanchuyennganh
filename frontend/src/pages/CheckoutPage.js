@@ -11,63 +11,8 @@ const SHIPPING_OPTIONS = [
 
 const PAYMENT_OPTIONS = [
     { id: 'cod', label: 'Thanh toán khi nhận hàng' },
-    { id: 'bank', label: 'Chuyển khoản ngân hàng qua QR shop' },
-    { id: 'wallet', label: 'Ví điện tử' }
+    { id: 'bank', label: 'Chuyển khoản ngân hàng qua QR' }
 ];
-
-const BANK_NAME_MAP = {
-    VCB: 'vietcombank',
-    VIETCOMBANK: 'vietcombank',
-    BIDV: 'bidv',
-    AGRIBANK: 'agribank',
-    VIETINBANK: 'vietinbank',
-    TECHCOMBANK: 'techcombank',
-    MBBANK: 'mbbank',
-    MB: 'mbbank',
-    ACB: 'acb',
-    TPBANK: 'tpbank',
-    SACOMBANK: 'sacombank',
-    HDBANK: 'hdbank',
-    OCB: 'ocb',
-    VIB: 'vib',
-    MSB: 'msb',
-    SHB: 'shb',
-    EXIMBANK: 'eximbank'
-};
-
-const parseBankAccount = (value = '') => {
-    const normalized = String(value || '').trim();
-    if (!normalized) return null;
-
-    const segments = normalized
-        .split(/[-,|]/)
-        .map((segment) => segment.trim())
-        .filter(Boolean);
-
-    if (segments.length < 3) {
-        return null;
-    }
-
-    const accountNumber = segments[0].replace(/\s+/g, '');
-    const bankKey = segments[1].replace(/\s+/g, '').toUpperCase();
-    const accountName = segments.slice(2).join(' ');
-    const bankCode = BANK_NAME_MAP[bankKey];
-
-    if (!accountNumber || !bankCode || !accountName) {
-        return null;
-    }
-
-    return {
-        accountNumber,
-        bankCode,
-        accountName,
-        rawBank: segments[1]
-    };
-};
-
-const buildVietQrUrl = ({ bankCode, accountNumber, accountName, amount, addInfo }) => (
-    `https://img.vietqr.io/image/${bankCode}-${accountNumber}-compact2.png?amount=${encodeURIComponent(amount)}&addInfo=${encodeURIComponent(addInfo)}&accountName=${encodeURIComponent(accountName)}`
-);
 
 const buildSellerPaymentGroups = (items = []) => {
     const grouped = new Map();
@@ -91,26 +36,13 @@ const buildSellerPaymentGroups = (items = []) => {
         current.subtotal += amount;
     });
 
-    return Array.from(grouped.values()).map((group) => {
-        const bankInfo = parseBankAccount(group.seller?.bankAccount);
-        const sellerLabel =
+    return Array.from(grouped.values()).map((group) => ({
+        ...group,
+        sellerLabel:
             group.seller?.shopName ||
             [group.seller?.firstName, group.seller?.lastName].filter(Boolean).join(' ') ||
-            `Shop #${group.sellerId}`;
-
-        return {
-            ...group,
-            sellerLabel,
-            bankInfo,
-            qrUrl: bankInfo
-                ? buildVietQrUrl({
-                    ...bankInfo,
-                    amount: Math.round(group.subtotal),
-                    addInfo: `Thanh toán ${sellerLabel}`
-                })
-                : ''
-        };
-    });
+            `Shop #${group.sellerId}`
+    }));
 };
 
 const calculateVoucherDiscount = (voucher, subtotal, shippingFee) => {
@@ -189,11 +121,13 @@ function CheckoutPage() {
     const shipping = SHIPPING_OPTIONS.find((option) => option.id === formData.shippingMethod) || SHIPPING_OPTIONS[0];
     const payment = PAYMENT_OPTIONS.find((option) => option.id === formData.paymentMethod) || PAYMENT_OPTIONS[0];
 
-    const discount = useMemo(() => {
-        return calculateVoucherDiscount(appliedVoucher, subtotal, shipping.fee);
-    }, [appliedVoucher, shipping.fee, subtotal]);
+    const discount = useMemo(
+        () => calculateVoucherDiscount(appliedVoucher, subtotal, shipping.fee),
+        [appliedVoucher, shipping.fee, subtotal]
+    );
 
     const total = Math.max(subtotal + shipping.fee - discount, 0);
+    const missingBankQrGroups = sellerPaymentGroups.filter((group) => !group.seller?.bankQrImage);
 
     const handleApplyVoucher = () => {
         const normalized = voucherCode.trim().toUpperCase();
@@ -215,6 +149,11 @@ function CheckoutPage() {
             return;
         }
 
+        if (formData.paymentMethod === 'bank' && missingBankQrGroups.length > 0) {
+            setError('Một hoặc nhiều shop chưa tải lên ảnh QR ngân hàng nên chưa thể thanh toán chuyển khoản.');
+            return;
+        }
+
         try {
             setSubmitting(true);
             const shippingAddress = [
@@ -231,6 +170,7 @@ function CheckoutPage() {
                 shippingFee: shipping.fee,
                 shippingMethod: shipping.label,
                 paymentMethod: payment.label,
+                paymentMethodCode: payment.id,
                 voucherCode: appliedVoucher?.code || ''
             });
             navigate('/orders');
@@ -389,9 +329,9 @@ function CheckoutPage() {
 
                     {formData.paymentMethod === 'bank' && (
                         <div className="border rounded p-4 bg-white mt-4">
-                            <h4 className="mb-3">Mã QR chuyển khoản theo shop</h4>
+                            <h4 className="mb-3">QR thanh toán theo shop</h4>
                             <div className="alert alert-info">
-                                Nếu giỏ hàng có nhiều shop, bạn cần chuyển khoản từng shop theo mã QR bên dưới trước khi đặt hàng.
+                                Với đơn hàng nhiều shop, bạn chuyển khoản theo QR của từng shop trước khi bấm đặt hàng.
                             </div>
                             <div className="d-flex flex-column gap-4">
                                 {sellerPaymentGroups.map((group) => (
@@ -408,27 +348,28 @@ function CheckoutPage() {
                                             </div>
                                         </div>
 
-                                        {group.bankInfo ? (
+                                        {group.seller?.bankQrImage ? (
                                             <div className="row g-3 align-items-center">
                                                 <div className="col-md-4">
                                                     <img
-                                                        src={group.qrUrl}
+                                                        src={group.seller.bankQrImage}
                                                         alt={`QR ${group.sellerLabel}`}
-                                                        className="img-fluid border rounded"
+                                                        className="img-fluid border rounded p-2 bg-white"
+                                                        style={{ maxHeight: 240, objectFit: 'contain' }}
                                                     />
                                                 </div>
                                                 <div className="col-md-8">
-                                                    <div><strong>Ngân hàng:</strong> {group.bankInfo.rawBank}</div>
-                                                    <div><strong>Số tài khoản:</strong> {group.bankInfo.accountNumber}</div>
-                                                    <div><strong>Chủ tài khoản:</strong> {group.bankInfo.accountName}</div>
+                                                    <div><strong>Shop:</strong> {group.sellerLabel}</div>
+                                                    <div><strong>Số tiền cần chuyển:</strong> {group.subtotal.toLocaleString('vi-VN')} VND</div>
+                                                    <div><strong>Tài khoản ngân hàng:</strong> {group.seller?.bankAccount || 'Shop chưa cập nhật'}</div>
                                                     <div className="text-muted small mt-2">
-                                                        Thông tin shop đăng ký: {group.seller?.bankAccount}
+                                                        Ảnh QR này được shop tải trực tiếp từ máy tính lên hệ thống.
                                                     </div>
                                                 </div>
                                             </div>
                                         ) : (
                                             <div className="alert alert-warning mb-0">
-                                                Shop này chưa cấu hình tài khoản ngân hàng đúng định dạng `Số tài khoản - Mã ngân hàng - Tên chủ tài khoản`, nên chưa tạo được QR.
+                                                Shop này chưa tải lên ảnh QR ngân hàng nên bạn chưa thể thanh toán chuyển khoản cho shop này.
                                             </div>
                                         )}
                                     </div>

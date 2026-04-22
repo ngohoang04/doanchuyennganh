@@ -4,7 +4,6 @@ import { register } from '../services/AuthService';
 import { useAuth } from '../context/AuthContext';
 import {
     getSocialAuthConfigError,
-    requestFacebookAccessToken,
     requestGoogleAccessToken
 } from '../services/socialAuth';
 import './auth.css';
@@ -122,9 +121,7 @@ function Register({ show = true, onClose, onShowLogin }) {
         setError('');
 
         try {
-            const accessToken = provider === 'google'
-                ? await requestGoogleAccessToken()
-                : await requestFacebookAccessToken();
+            const accessToken = await requestGoogleAccessToken();
             await socialLogin(provider, accessToken);
             if (onClose) onClose();
         } catch (err) {
@@ -281,24 +278,15 @@ function Register({ show = true, onClose, onShowLogin }) {
                     </button>
                 </form>
 
-                <div className="divider">HOAC</div>
+                <div className="divider">HOẶC</div>
 
                 <button
                     type="button"
-                    className="btn btn-social google-login w-100 mb-2"
+                    className="btn btn-social google-login w-100 mb-3"
                     onClick={() => handleSocialRegister('google')}
                     disabled={Boolean(socialLoading)}
                 >
                     <i className="bi bi-google"></i> {socialLoading === 'google' ? 'Đang kết nối Google...' : 'Đăng ký với Google'}
-                </button>
-
-                <button
-                    type="button"
-                    className="btn btn-social facebook-login w-100 mb-3"
-                    onClick={() => handleSocialRegister('facebook')}
-                    disabled={Boolean(socialLoading)}
-                >
-                    <i className="bi bi-facebook"></i> {socialLoading === 'facebook' ? 'Đang kết nối Facebook...' : 'Đăng ký với Facebook'}
                 </button>
 
                 <div className="auth-footer">

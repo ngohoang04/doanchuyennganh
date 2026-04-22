@@ -3,7 +3,7 @@ const { User } = require('../models');
 class UserService {
     static isMissingSellerDetailColumnError(error) {
         const message = error?.message || '';
-        return /unknown column/i.test(message) && /(shop_|id_card_|business_license|bank_account)/i.test(message);
+        return /unknown column/i.test(message) && /(shop_|id_card_|business_license|bank_account|bank_qr_image)/i.test(message);
     }
 
     static async getAll() {
@@ -70,6 +70,7 @@ class UserService {
             idCardBack: data.idCardBack,
             businessLicense: data.businessLicense,
             bankAccount: data.bankAccount,
+            bankQrImage: data.bankQrImage,
             shopLogo: data.shopLogo
         };
 

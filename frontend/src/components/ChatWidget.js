@@ -16,7 +16,7 @@ function ChatWidget() {
     const [loadingContacts, setLoadingContacts] = useState(false);
     const [loadingMessages, setLoadingMessages] = useState(false);
     const [sending, setSending] = useState(false);
-    const [error, setError] = useState('');
+    const panelRef = useRef(null);
     const messagesEndRef = useRef(null);
 
     const selectedContactId = selectedContact?.id;
@@ -25,6 +25,7 @@ function ChatWidget() {
         () => [...contacts].sort((a, b) => new Date(b.lastMessageAt || 0) - new Date(a.lastMessageAt || 0)),
         [contacts]
     );
+
     const totalUnreadCount = useMemo(
         () => contacts.reduce((sum, contact) => sum + Number(contact.unreadCount || 0), 0),
         [contacts]
@@ -55,6 +56,19 @@ function ChatWidget() {
     }, [isAuthenticated, user]);
 
     useEffect(() => {
+        if (!isOpen) return;
+
+        const handleClickOutside = (event) => {
+            if (panelRef.current && !panelRef.current.contains(event.target)) {
+                setIsOpen(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [isOpen]);
+
+    useEffect(() => {
         if (!isAuthenticated || !user) return;
 
         const fetchContacts = async () => {
@@ -69,8 +83,6 @@ function ChatWidget() {
                         setSelectedContact((prev) => ({ ...prev, ...refreshedSelected }));
                     }
                 }
-            } catch (err) {
-                setError(err.response?.data?.message || 'Không thể tải danh sách chat');
             } finally {
                 setLoadingContacts(false);
             }
@@ -96,9 +108,6 @@ function ChatWidget() {
                         : contact
                 )));
                 setSelectedContact((prev) => (prev ? { ...prev, unreadCount: 0 } : prev));
-                setError('');
-            } catch (err) {
-                setError(err.response?.data?.message || 'Không thể tải nội dung chat');
             } finally {
                 setLoadingMessages(false);
             }
@@ -121,11 +130,10 @@ function ChatWidget() {
     const handleSelectContact = (contact) => {
         setSelectedContact(contact);
         setIsOpen(true);
-        setError('');
     };
 
     const handleSendMessage = async (e) => {
-        e.preventDefault();
+        if (e) e.preventDefault();
         if (!selectedContact || !messageText.trim()) return;
 
         try {
@@ -147,11 +155,17 @@ function ChatWidget() {
                 return [nextContact, ...others];
             });
             setMessageText('');
-            setError('');
-        } catch (err) {
-            setError(err.response?.data?.message || 'Không thể gửi tin nhắn');
         } finally {
             setSending(false);
+        }
+    };
+
+    const handleMessageKeyDown = (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            if (!sending && messageText.trim()) {
+                handleSendMessage();
+            }
         }
     };
 
@@ -166,7 +180,7 @@ function ChatWidget() {
             )}
 
             {isOpen && (
-                <div className="chat-widget-panel">
+                <div className="chat-widget-panel" ref={panelRef}>
                     <div className="chat-widget-header">
                         <div>
                             <div className="chat-widget-title">Trò chuyện</div>
@@ -178,8 +192,6 @@ function ChatWidget() {
                             <i className="bi bi-x-lg"></i>
                         </button>
                     </div>
-
-                    {error && <div className="alert alert-danger m-3 py-2 px-3">{error}</div>}
 
                     <div className="chat-widget-body">
                         <div className="chat-widget-sidebar">
@@ -242,9 +254,10 @@ function ChatWidget() {
                                         <textarea
                                             className="form-control"
                                             rows="2"
-                                            placeholder="Nhập tin nhắn..."
+                                            placeholder="Nhập tin nhắn... Enter để gửi, Shift+Enter để xuống dòng"
                                             value={messageText}
                                             onChange={(e) => setMessageText(e.target.value)}
+                                            onKeyDown={handleMessageKeyDown}
                                         />
                                         <button className="btn btn-primary" type="submit" disabled={sending || !messageText.trim()}>
                                             {sending ? 'Đang gửi...' : 'Gửi'}

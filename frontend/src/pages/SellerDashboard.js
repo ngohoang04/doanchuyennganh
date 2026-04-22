@@ -3,11 +3,32 @@ import api from '../services/Api';
 import { useAuth } from '../context/AuthContext';
 import './admin.css';
 
+const readFileAsDataUrl = (file) =>
+    new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(new Error('Không thể đọc tệp hình ảnh'));
+        reader.readAsDataURL(file);
+    });
+
 function SellerDashboard() {
-    const { user } = useAuth();
+    const { user, updateUser } = useAuth();
     const [products, setProducts] = useState([]);
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [savingQr, setSavingQr] = useState(false);
+    const [qrMessage, setQrMessage] = useState('');
+    const [sellerPaymentForm, setSellerPaymentForm] = useState({
+        bankAccount: user?.bankAccount || '',
+        bankQrImage: user?.bankQrImage || ''
+    });
+
+    useEffect(() => {
+        setSellerPaymentForm({
+            bankAccount: user?.bankAccount || '',
+            bankQrImage: user?.bankQrImage || ''
+        });
+    }, [user]);
 
     const fetchData = async () => {
         try {
@@ -55,12 +76,57 @@ function SellerDashboard() {
         [products]
     );
 
+    const completedOrders = useMemo(
+        () => orders.filter((order) => String(order.status || '').toLowerCase() === 'completed').length,
+        [orders]
+    );
+
     const stats = [
         { title: 'Sản phẩm', value: products.length, icon: 'bi-box' },
         { title: 'Đơn hàng', value: orders.length, icon: 'bi-bag-check' },
+        { title: 'Đơn hoàn tất', value: completedOrders, icon: 'bi-patch-check' },
         { title: 'Doanh thu tạm tính', value: `${revenue.toLocaleString('vi-VN')} VND`, icon: 'bi-cash-stack' },
         { title: 'Tồn kho', value: totalStock, icon: 'bi-archive' }
     ];
+
+    const handleBankAccountChange = (e) => {
+        setSellerPaymentForm((prev) => ({
+            ...prev,
+            bankAccount: e.target.value
+        }));
+        setQrMessage('');
+    };
+
+    const handleQrImageChange = async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        try {
+            const image = await readFileAsDataUrl(file);
+            setSellerPaymentForm((prev) => ({
+                ...prev,
+                bankQrImage: image
+            }));
+            setQrMessage('');
+        } finally {
+            e.target.value = '';
+        }
+    };
+
+    const handleSaveQr = async () => {
+        try {
+            setSavingQr(true);
+            await updateUser(user.id, {
+                bankAccount: sellerPaymentForm.bankAccount,
+                bankQrImage: sellerPaymentForm.bankQrImage
+            });
+            setQrMessage('Đã cập nhật QR thanh toán cho shop.');
+        } catch (error) {
+            setQrMessage('Chưa lưu được QR, vui lòng thử lại.');
+        } finally {
+            setSavingQr(false);
+        }
+    };
 
     if (loading) {
         return <div className="admin-loading"><div className="spinner-border text-primary"></div></div>;
@@ -87,6 +153,66 @@ function SellerDashboard() {
                         </div>
                     </div>
                 ))}
+            </div>
+
+            <div className="border rounded p-4 bg-white mt-4">
+                <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                    <div>
+                        <h4 className="mb-1">QR thanh toán của shop</h4>
+                        <p className="text-muted mb-0">Khách hàng sẽ dùng ảnh QR này khi chọn chuyển khoản ngân hàng.</p>
+                    </div>
+                </div>
+
+                <div className="row g-4 align-items-start">
+                    <div className="col-lg-7">
+                        <div className="mb-3">
+                            <label className="form-label">Thông tin tài khoản ngân hàng</label>
+                            <input
+                                type="text"
+                                className="form-control"
+                                placeholder="Ví dụ: 123456789 - VCB - Nguyen Van A"
+                                value={sellerPaymentForm.bankAccount}
+                                onChange={handleBankAccountChange}
+                            />
+                        </div>
+                        <div className="mb-3">
+                            <label className="form-label">Tải ảnh QR từ máy tính</label>
+                            <input
+                                type="file"
+                                className="form-control"
+                                accept="image/*"
+                                onChange={handleQrImageChange}
+                            />
+                        </div>
+                        {qrMessage && <div className="text-muted small">{qrMessage}</div>}
+                        <button className="btn btn-primary mt-2" onClick={handleSaveQr} disabled={savingQr}>
+                            {savingQr ? 'Đang lưu...' : 'Lưu QR thanh toán'}
+                        </button>
+                    </div>
+
+                    <div className="col-lg-5">
+                        <div className="border rounded p-3 bg-light h-100">
+                            <div className="fw-semibold mb-2">Xem trước</div>
+                            {sellerPaymentForm.bankQrImage ? (
+                                <img
+                                    src={sellerPaymentForm.bankQrImage}
+                                    alt="QR shop"
+                                    style={{
+                                        width: '100%',
+                                        maxHeight: 260,
+                                        objectFit: 'contain',
+                                        background: '#fff',
+                                        borderRadius: 12,
+                                        border: '1px solid #e0e0e0',
+                                        padding: 8
+                                    }}
+                                />
+                            ) : (
+                                <div className="text-muted">Chưa có ảnh QR nào được tải lên.</div>
+                            )}
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     );

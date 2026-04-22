@@ -12,7 +12,7 @@ class CartService {
                     include: [{
                         model: User,
                         as: 'seller',
-                        attributes: ['id', 'firstName', 'lastName', 'shopName', 'bankAccount']
+                        attributes: ['id', 'firstName', 'lastName', 'shopName', 'bankAccount', 'bankQrImage']
                     }]
                 }]
             }

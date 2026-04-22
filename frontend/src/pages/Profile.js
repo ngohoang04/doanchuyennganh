@@ -1,7 +1,40 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import './profile.css';
+
+const buildProfileForm = (user) => ({
+    email: user?.email || '',
+    firstName: user?.firstName || '',
+    lastName: user?.lastName || '',
+    phone: user?.phone || '',
+    avatar: user?.avatar || ''
+});
+
+const buildSellerRequestForm = (user) => ({
+    fullName: [user?.firstName, user?.lastName].filter(Boolean).join(' ') || '',
+    phone: user?.phone || '',
+    email: user?.email || '',
+    idCardNumber: '',
+    shopName: '',
+    shopDescription: '',
+    shopAddress: '',
+    shopLogo: '',
+    idCardFront: '',
+    idCardBack: '',
+    businessLicense: '',
+    bankAccount: '',
+    bankQrImage: ''
+});
+
+const buildSellerSettingsForm = (user) => ({
+    shopName: user?.shopName || '',
+    shopDescription: user?.shopDescription || '',
+    shopAddress: user?.shopAddress || '',
+    bankAccount: user?.bankAccount || '',
+    bankQrImage: user?.bankQrImage || '',
+    shopLogo: user?.shopLogo || ''
+});
 
 function Profile() {
     const navigate = useNavigate();
@@ -11,29 +44,18 @@ function Profile() {
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
     const [showSellerForm, setShowSellerForm] = useState(false);
-    const [sellerForm, setSellerForm] = useState({
-        fullName: [user?.firstName, user?.lastName].filter(Boolean).join(' ') || '',
-        phone: user?.phone || '',
-        email: user?.email || '',
-        idCardNumber: '',
-        shopName: '',
-        shopDescription: '',
-        shopAddress: '',
-        shopLogo: '',
-        idCardFront: '',
-        idCardBack: '',
-        businessLicense: '',
-        bankAccount: ''
-    });
-    const [formData, setFormData] = useState({
-        email: user?.email || '',
-        firstName: user?.firstName || '',
-        lastName: user?.lastName || '',
-        phone: user?.phone || '',
-        avatar: user?.avatar || ''
-    });
+    const [formData, setFormData] = useState(buildProfileForm(user));
+    const [sellerForm, setSellerForm] = useState(buildSellerRequestForm(user));
+    const [sellerSettings, setSellerSettings] = useState(buildSellerSettingsForm(user));
+
+    useEffect(() => {
+        setFormData(buildProfileForm(user));
+        setSellerForm(buildSellerRequestForm(user));
+        setSellerSettings(buildSellerSettingsForm(user));
+    }, [user]);
 
     const shouldShowSellerSection = user && !['seller', 'admin'].includes(String(user.role || '').toLowerCase());
+    const shouldShowSellerSettings = user && ['seller', 'admin'].includes(String(user.role || '').toLowerCase());
 
     const compressImage = (base64String, quality = 0.7, maxSize = 500000) => (
         new Promise((resolve) => {
@@ -58,6 +80,22 @@ function Profile() {
         })
     );
 
+    const withAutoClearSuccess = (message) => {
+        setSuccess(message);
+        window.setTimeout(() => setSuccess(''), 5000);
+    };
+
+    const readImageFile = async (file) => {
+        const base64 = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result);
+            reader.onerror = () => reject(new Error('Không thể đọc tệp hình ảnh'));
+            reader.readAsDataURL(file);
+        });
+
+        return compressImage(base64);
+    };
+
     const handleChange = (e) => {
         setFormData((prev) => ({
             ...prev,
@@ -65,19 +103,21 @@ function Profile() {
         }));
     };
 
-    const handleAvatarChange = (e) => {
+    const handleAvatarChange = async (e) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
-        const reader = new FileReader();
-        reader.onloadend = async () => {
-            const compressed = await compressImage(reader.result);
+        try {
+            const compressed = await readImageFile(file);
             setFormData((prev) => ({
                 ...prev,
                 avatar: compressed
             }));
-        };
-        reader.readAsDataURL(file);
+        } catch (err) {
+            setError(err.message || 'Không thể tải ảnh đại diện');
+        } finally {
+            e.target.value = '';
+        }
     };
 
     const handleSubmit = async (e) => {
@@ -88,9 +128,8 @@ function Profile() {
 
         try {
             await updateUser(user.id, formData);
-            setSuccess('Cập nhật thông tin cá nhân thành công.');
             setIsEditing(false);
-            window.setTimeout(() => setSuccess(''), 4000);
+            withAutoClearSuccess('Cập nhật thông tin cá nhân thành công.');
         } catch (err) {
             setError(err.message || 'Lỗi khi cập nhật thông tin.');
         } finally {
@@ -105,37 +144,34 @@ function Profile() {
         }));
     };
 
-    const handleSellerFileChange = (e) => {
-        const file = e.target.files?.[0];
+    const handleSellerSettingsChange = (e) => {
+        setSellerSettings((prev) => ({
+            ...prev,
+            [e.target.name]: e.target.value
+        }));
+    };
+
+    const handleImageFieldChange = async (e, setter) => {
+        const { name, files } = e.target;
+        const file = files?.[0];
         if (!file) return;
 
-        const reader = new FileReader();
-        reader.onloadend = async () => {
-            const compressed = await compressImage(reader.result);
-            setSellerForm((prev) => ({
+        try {
+            const compressed = await readImageFile(file);
+            setter((prev) => ({
                 ...prev,
-                [e.target.name]: compressed
+                [name]: compressed
             }));
-        };
-        reader.readAsDataURL(file);
+            setError('');
+        } catch (err) {
+            setError(err.message || 'Không thể đọc tệp hình ảnh');
+        } finally {
+            e.target.value = '';
+        }
     };
 
-    const resetSellerForm = () => {
-        setSellerForm({
-            fullName: [user?.firstName, user?.lastName].filter(Boolean).join(' ') || '',
-            phone: user?.phone || '',
-            email: user?.email || '',
-            idCardNumber: '',
-            shopName: '',
-            shopDescription: '',
-            shopAddress: '',
-            shopLogo: '',
-            idCardFront: '',
-            idCardBack: '',
-            businessLicense: '',
-            bankAccount: ''
-        });
-    };
+    const handleSellerFileChange = (e) => handleImageFieldChange(e, setSellerForm);
+    const handleSellerSettingsFileChange = (e) => handleImageFieldChange(e, setSellerSettings);
 
     const handleSellerRequestSubmit = async (e) => {
         e.preventDefault();
@@ -164,16 +200,30 @@ function Profile() {
                 idCardBack: sellerForm.idCardBack,
                 businessLicense: sellerForm.businessLicense,
                 bankAccount: sellerForm.bankAccount,
+                bankQrImage: sellerForm.bankQrImage,
                 shopLogo: sellerForm.shopLogo
             });
 
-            setSuccess('Hồ sơ đăng ký người bán đã được gửi thành công. Vui lòng chờ quản trị viên phê duyệt.');
             setShowSellerForm(false);
-            resetSellerForm();
-            window.scrollTo(0, 0);
-            window.setTimeout(() => setSuccess(''), 5000);
+            withAutoClearSuccess('Hồ sơ đăng ký người bán đã được gửi thành công. Vui lòng chờ quản trị viên phê duyệt.');
         } catch (err) {
             setError(err.message || 'Lỗi khi gửi yêu cầu.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleSellerSettingsSubmit = async (e) => {
+        e.preventDefault();
+        setLoading(true);
+        setError('');
+        setSuccess('');
+
+        try {
+            await updateUser(user.id, sellerSettings);
+            withAutoClearSuccess('Đã cập nhật thông tin shop và QR ngân hàng.');
+        } catch (err) {
+            setError(err.message || 'Không thể cập nhật thông tin shop.');
         } finally {
             setLoading(false);
         }
@@ -287,7 +337,7 @@ function Profile() {
                                                 onChange={handleAvatarChange}
                                             />
                                             <small className="form-text text-muted d-block mt-2">
-                                                Chọn ảnh để đặt làm ảnh đại diện. Khuyến nghị dung lượng dưới 2MB.
+                                                Chọn ảnh từ máy tính để đặt làm ảnh đại diện. Khuyến nghị dung lượng dưới 2MB.
                                             </small>
                                         </div>
                                     </div>
@@ -326,6 +376,110 @@ function Profile() {
                                 </div>
                             )}
                         </div>
+
+                        {shouldShowSellerSettings && (
+                            <div className="profile-card mt-4">
+                                <div className="profile-card-header">
+                                    <h3><i className="bi bi-shop"></i> Thông tin shop và thanh toán</h3>
+                                </div>
+                                <form onSubmit={handleSellerSettingsSubmit} className="profile-form">
+                                    <div className="form-row">
+                                        <div className="col-md-6 mb-3">
+                                            <label className="form-label">Tên shop</label>
+                                            <input
+                                                type="text"
+                                                className="form-control"
+                                                name="shopName"
+                                                value={sellerSettings.shopName}
+                                                onChange={handleSellerSettingsChange}
+                                            />
+                                        </div>
+                                        <div className="col-md-6 mb-3">
+                                            <label className="form-label">Địa chỉ shop</label>
+                                            <input
+                                                type="text"
+                                                className="form-control"
+                                                name="shopAddress"
+                                                value={sellerSettings.shopAddress}
+                                                onChange={handleSellerSettingsChange}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="mb-3">
+                                        <label className="form-label">Mô tả shop</label>
+                                        <textarea
+                                            className="form-control"
+                                            rows="3"
+                                            name="shopDescription"
+                                            value={sellerSettings.shopDescription}
+                                            onChange={handleSellerSettingsChange}
+                                        ></textarea>
+                                    </div>
+
+                                    <div className="mb-3">
+                                        <label className="form-label">Thông tin tài khoản ngân hàng</label>
+                                        <input
+                                            type="text"
+                                            className="form-control"
+                                            name="bankAccount"
+                                            placeholder="Ví dụ: 123456789 - VCB - Nguyen Van A"
+                                            value={sellerSettings.bankAccount}
+                                            onChange={handleSellerSettingsChange}
+                                        />
+                                        <small className="text-muted d-block mt-2">
+                                            Thông tin này dùng để hiển thị cho người mua khi chọn thanh toán ngân hàng.
+                                        </small>
+                                    </div>
+
+                                    <div className="form-row">
+                                        <div className="col-md-6 mb-3">
+                                            <label className="form-label">Logo shop</label>
+                                            <input
+                                                type="file"
+                                                className="form-control"
+                                                name="shopLogo"
+                                                accept="image/*"
+                                                onChange={handleSellerSettingsFileChange}
+                                            />
+                                            {sellerSettings.shopLogo && (
+                                                <img
+                                                    src={sellerSettings.shopLogo}
+                                                    alt="Shop logo"
+                                                    style={{ width: 120, height: 120, objectFit: 'cover', borderRadius: 12, marginTop: 12 }}
+                                                />
+                                            )}
+                                        </div>
+                                        <div className="col-md-6 mb-3">
+                                            <label className="form-label">Ảnh QR ngân hàng</label>
+                                            <input
+                                                type="file"
+                                                className="form-control"
+                                                name="bankQrImage"
+                                                accept="image/*"
+                                                onChange={handleSellerSettingsFileChange}
+                                            />
+                                            <small className="text-muted d-block mt-2">
+                                                Người mua sẽ dùng trực tiếp ảnh QR này khi thanh toán chuyển khoản.
+                                            </small>
+                                            {sellerSettings.bankQrImage && (
+                                                <img
+                                                    src={sellerSettings.bankQrImage}
+                                                    alt="Bank QR"
+                                                    style={{ width: 160, height: 160, objectFit: 'contain', borderRadius: 12, border: '1px solid #e0e0e0', marginTop: 12, padding: 8, background: '#fff' }}
+                                                />
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <div className="profile-form-actions">
+                                        <button type="submit" className="btn btn-primary btn-lg" disabled={loading}>
+                                            {loading ? 'Đang lưu...' : 'Lưu thông tin shop'}
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        )}
 
                         {shouldShowSellerSection && (
                             <div className="profile-card mt-4">
@@ -374,10 +528,23 @@ function Profile() {
                                                     <label className="form-label">Mô tả shop</label>
                                                     <textarea className="form-control" name="shopDescription" rows="3" value={sellerForm.shopDescription} onChange={handleSellerChange} required></textarea>
                                                 </div>
-                                                <div className="col-md-12 mb-3">
+                                                <div className="col-md-6 mb-3">
                                                     <label className="form-label">Logo shop</label>
                                                     <input type="file" className="form-control" name="shopLogo" accept="image/*" onChange={handleSellerFileChange} />
                                                 </div>
+                                                <div className="col-md-6 mb-3">
+                                                    <label className="form-label">Ảnh QR ngân hàng</label>
+                                                    <input type="file" className="form-control" name="bankQrImage" accept="image/*" onChange={handleSellerFileChange} required />
+                                                </div>
+                                                {sellerForm.bankQrImage && (
+                                                    <div className="col-md-12 mb-3">
+                                                        <img
+                                                            src={sellerForm.bankQrImage}
+                                                            alt="QR ngân hàng"
+                                                            style={{ width: 180, height: 180, objectFit: 'contain', border: '1px solid #e0e0e0', borderRadius: 12, padding: 8, background: '#fff' }}
+                                                        />
+                                                    </div>
+                                                )}
                                             </div>
 
                                             <h5 className="mb-3 text-primary border-bottom pb-2">3. Thông tin pháp lý</h5>

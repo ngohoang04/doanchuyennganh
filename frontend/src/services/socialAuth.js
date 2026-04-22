@@ -1,8 +1,6 @@
 const GOOGLE_CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID || '';
-const FACEBOOK_APP_ID = process.env.REACT_APP_FACEBOOK_APP_ID || '';
 
 let googleScriptPromise = null;
-let facebookScriptPromise = null;
 
 const loadScript = (src, id) => new Promise((resolve, reject) => {
     const existing = document.getElementById(id);
@@ -22,15 +20,10 @@ const loadScript = (src, id) => new Promise((resolve, reject) => {
 });
 
 export const hasGoogleSocialAuth = () => Boolean(GOOGLE_CLIENT_ID);
-export const hasFacebookSocialAuth = () => Boolean(FACEBOOK_APP_ID);
 
 export const getSocialAuthConfigError = (provider) => {
     if (provider === 'google' && !GOOGLE_CLIENT_ID) {
         return 'Chưa cấu hình REACT_APP_GOOGLE_CLIENT_ID';
-    }
-
-    if (provider === 'facebook' && !FACEBOOK_APP_ID) {
-        return 'Chưa cấu hình REACT_APP_FACEBOOK_APP_ID';
     }
 
     return '';
@@ -71,55 +64,5 @@ export const requestGoogleAccessToken = async () => {
         });
 
         tokenClient.requestAccessToken({ prompt: 'consent' });
-    });
-};
-
-export const requestFacebookAccessToken = async () => {
-    if (!FACEBOOK_APP_ID) {
-        throw new Error(getSocialAuthConfigError('facebook'));
-    }
-
-    if (!facebookScriptPromise) {
-        facebookScriptPromise = new Promise((resolve, reject) => {
-            if (window.FB) {
-                window.FB.init({
-                    appId: FACEBOOK_APP_ID,
-                    cookie: false,
-                    xfbml: false,
-                    version: 'v19.0'
-                });
-                resolve();
-                return;
-            }
-
-            window.fbAsyncInit = function initFacebookSdk() {
-                window.FB.init({
-                    appId: FACEBOOK_APP_ID,
-                    cookie: false,
-                    xfbml: false,
-                    version: 'v19.0'
-                });
-                resolve();
-            };
-
-            loadScript('https://connect.facebook.net/en_US/sdk.js', 'facebook-jssdk').catch(reject);
-        });
-    }
-
-    await facebookScriptPromise;
-
-    if (!window.FB) {
-        throw new Error('Không thể khởi tạo Facebook SDK');
-    }
-
-    return new Promise((resolve, reject) => {
-        window.FB.login((response) => {
-            if (!response?.authResponse?.accessToken) {
-                reject(new Error('Đăng nhập Facebook thất bại'));
-                return;
-            }
-
-            resolve(response.authResponse.accessToken);
-        }, { scope: 'public_profile,email' });
     });
 };

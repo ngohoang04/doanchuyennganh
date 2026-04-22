@@ -34,10 +34,10 @@ function ProductDetail() {
     }, [id, isAuthenticated, user]);
 
     useEffect(() => {
-        if (!loading && product && location.state?.focusReview) {
+        if (!loading && product && location.state?.focusReview && reviewEligibility?.canReview) {
             reviewSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
-    }, [loading, product, location.state]);
+    }, [loading, product, location.state, reviewEligibility]);
 
     const currentCategoryId = useMemo(
         () => product?.categoryId || product?.category?.id || null,
@@ -194,7 +194,7 @@ function ProductDetail() {
     if (!product) return <div className="container py-5">Không tìm thấy sản phẩm.</div>;
 
     const reviewNotice = !isAuthenticated || !user
-        ? 'Đăng nhập và mua sản phẩm để có thể đánh giá.'
+        ? 'Chỉ khách đã mua hàng mới có thể đánh giá sản phẩm.'
         : reviewEligibility?.message || 'Bạn chỉ có thể đánh giá sau khi đơn hàng đã hoàn thành.';
     const canReview = Boolean(reviewEligibility?.canReview);
     const hasReviewed = Boolean(reviewEligibility?.hasReviewed);
@@ -239,7 +239,6 @@ function ProductDetail() {
                     <p className="fs-3 fw-bold text-danger">
                         {Number(product.price || 0).toLocaleString('vi-VN')} VND
                     </p>
-                    <p>{product.description || 'Chưa có mô tả cho sản phẩm này.'}</p>
                     <p><strong>Tồn kho:</strong> {product.stock ?? 0}</p>
                     <p><strong>Người bán:</strong> {product.seller?.shopName || product.seller?.lastName || product.seller?.firstName || 'TechShop'}</p>
 
@@ -271,6 +270,78 @@ function ProductDetail() {
                         )}
                     </div>
                 </div>
+            </div>
+
+            <section className="mt-5">
+                <div className="border rounded-4 bg-white shadow-sm p-4">
+                    <h3 className="mb-3">Mô tả chi tiết</h3>
+                    <div style={{ whiteSpace: 'pre-line', lineHeight: 1.8, color: '#4b5563' }}>
+                        {product.description || 'Sản phẩm hiện chưa có mô tả chi tiết.'}
+                    </div>
+                </div>
+            </section>
+
+            <div className="row mt-5">
+                <div className={canReview ? 'col-lg-7' : 'col-12'}>
+                    <h3 className="mb-3">Đánh giá</h3>
+                    {!canReview && (
+                        <div className="alert alert-light border mb-3">
+                            {hasReviewed ? 'Bạn đã đánh giá sản phẩm này.' : reviewNotice}
+                        </div>
+                    )}
+                    {reviews.length === 0 ? (
+                        <p className="text-muted">Chưa có đánh giá nào.</p>
+                    ) : (
+                        <div className="d-flex flex-column gap-3">
+                            {reviews.map((review) => (
+                                <div key={review.id} className="border rounded p-3 bg-white">
+                                    <div className="d-flex justify-content-between">
+                                        <strong>{review.user?.lastName || review.user?.firstName || 'Người dùng'}</strong>
+                                        <span>{'★'.repeat(review.rating || 0)}</span>
+                                    </div>
+                                    <p className="mb-0 mt-2">{review.comment}</p>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+
+                {canReview && !hasReviewed && (
+                    <div className="col-lg-5" ref={reviewSectionRef}>
+                        <h3 className="mb-3">Viết đánh giá</h3>
+                        <div className="border rounded p-3 bg-white">
+                            <div className="alert alert-success mb-3">
+                                {reviewNotice}
+                            </div>
+
+                            <form onSubmit={handleSubmitReview}>
+                                <div className="mb-3">
+                                    <label className="form-label">Số sao</label>
+                                    <select
+                                        className="form-select"
+                                        value={reviewForm.rating}
+                                        onChange={(e) => setReviewForm({ ...reviewForm, rating: e.target.value })}
+                                    >
+                                        {[5, 4, 3, 2, 1].map((value) => (
+                                            <option key={value} value={value}>{value} sao</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div className="mb-3">
+                                    <label className="form-label">Nhận xét</label>
+                                    <textarea
+                                        className="form-control"
+                                        rows="4"
+                                        value={reviewForm.comment}
+                                        onChange={(e) => setReviewForm({ ...reviewForm, comment: e.target.value })}
+                                        required
+                                    />
+                                </div>
+                                <button className="btn btn-dark" disabled={submitting}>Gửi đánh giá</button>
+                            </form>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {similarProducts.length > 0 && (
@@ -319,79 +390,6 @@ function ProductDetail() {
                     </div>
                 </section>
             )}
-
-            <div className="row mt-5">
-                <div className="col-lg-7">
-                    <h3 className="mb-3">Đánh giá</h3>
-                    {reviews.length === 0 ? (
-                        <p className="text-muted">Chưa có đánh giá nào.</p>
-                    ) : (
-                        <div className="d-flex flex-column gap-3">
-                            {reviews.map((review) => (
-                                <div key={review.id} className="border rounded p-3 bg-white">
-                                    <div className="d-flex justify-content-between">
-                                        <strong>{review.user?.lastName || review.user?.firstName || 'Người dùng'}</strong>
-                                        <span>{'★'.repeat(review.rating || 0)}</span>
-                                    </div>
-                                    <p className="mb-0 mt-2">{review.comment}</p>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
-
-                {!hasReviewed && (
-                    <div className="col-lg-5" ref={reviewSectionRef}>
-                        <h3 className="mb-3">Viết đánh giá</h3>
-                        <div className="border rounded p-3 bg-white">
-                            <div className={`alert ${canReview ? 'alert-success' : 'alert-secondary'} mb-3`}>
-                                {reviewNotice}
-                            </div>
-
-                            {canReview ? (
-                                <form onSubmit={handleSubmitReview}>
-                                    <div className="mb-3">
-                                        <label className="form-label">Số sao</label>
-                                        <select
-                                            className="form-select"
-                                            value={reviewForm.rating}
-                                            onChange={(e) => setReviewForm({ ...reviewForm, rating: e.target.value })}
-                                        >
-                                            {[5, 4, 3, 2, 1].map((value) => (
-                                                <option key={value} value={value}>{value} sao</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <div className="mb-3">
-                                        <label className="form-label">Nhận xét</label>
-                                        <textarea
-                                            className="form-control"
-                                            rows="4"
-                                            value={reviewForm.comment}
-                                            onChange={(e) => setReviewForm({ ...reviewForm, comment: e.target.value })}
-                                            required
-                                        />
-                                    </div>
-                                    <button className="btn btn-dark" disabled={submitting}>Gửi đánh giá</button>
-                                </form>
-                            ) : (
-                                <button
-                                    type="button"
-                                    className="btn btn-outline-dark"
-                                    onClick={() => {
-                                        if (!isAuthenticated || !user) {
-                                            window.dispatchEvent(new Event('open-login-modal'));
-                                        }
-                                    }}
-                                    disabled={isAuthenticated && user}
-                                >
-                                    Đăng nhập để đánh giá
-                                </button>
-                            )}
-                        </div>
-                    </div>
-                )}
-            </div>
         </div>
     );
 }

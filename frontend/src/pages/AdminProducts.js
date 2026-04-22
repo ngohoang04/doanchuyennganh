@@ -2,6 +2,28 @@ import React, { useEffect, useState } from 'react';
 import api from '../services/Api';
 import './admin.css';
 
+const EMPTY_FORM = {
+    name: '',
+    price: '',
+    description: '',
+    images: [],
+    categoryId: '',
+    stock: ''
+};
+
+const readFilesAsDataUrls = (files) =>
+    Promise.all(
+        Array.from(files || []).map(
+            (file) =>
+                new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result);
+                    reader.onerror = () => reject(new Error('Không thể đọc tệp hình ảnh'));
+                    reader.readAsDataURL(file);
+                })
+        )
+    );
+
 function AdminProducts() {
     const [products, setProducts] = useState([]);
     const [categories, setCategories] = useState([]);
@@ -10,14 +32,7 @@ function AdminProducts() {
     const [searchTerm, setSearchTerm] = useState('');
     const [showModal, setShowModal] = useState(false);
     const [selectedProduct, setSelectedProduct] = useState(null);
-    const [formData, setFormData] = useState({
-        name: '',
-        price: '',
-        description: '',
-        image: '',
-        categoryId: '',
-        stock: ''
-    });
+    const [formData, setFormData] = useState(EMPTY_FORM);
     const totalStock = products.reduce((sum, product) => sum + Number(product.stock || 0), 0);
 
     useEffect(() => {
@@ -57,11 +72,13 @@ function AdminProducts() {
     const openEdit = (product) => {
         setSelectedProduct(product);
         setFormData({
-            name: product.name,
-            price: product.price,
+            name: product.name || '',
+            price: product.price || '',
             description: product.description || '',
-            image: product.image || '',
-            categoryId: product.categoryId,
+            images: Array.isArray(product.images) && product.images.length > 0
+                ? product.images
+                : [product.image].filter(Boolean),
+            categoryId: product.categoryId || '',
             stock: product.stock || 0
         });
         setShowModal(true);
@@ -69,21 +86,44 @@ function AdminProducts() {
 
     const openCreate = () => {
         setSelectedProduct(null);
-        setFormData({
-            name: '',
-            price: '',
-            description: '',
-            image: '',
-            categoryId: '',
-            stock: ''
-        });
+        setFormData(EMPTY_FORM);
         setShowModal(true);
+    };
+
+    const closeModal = () => {
+        setShowModal(false);
+        setSelectedProduct(null);
+        setFormData(EMPTY_FORM);
+    };
+
+    const handleImagesChange = async (e) => {
+        try {
+            const nextImages = await readFilesAsDataUrls(e.target.files);
+            setFormData((prev) => ({
+                ...prev,
+                images: [...prev.images, ...nextImages]
+            }));
+            setError('');
+        } catch (err) {
+            setError(err.message || 'Không thể đọc tệp hình ảnh');
+        } finally {
+            e.target.value = '';
+        }
+    };
+
+    const removeImage = (index) => {
+        setFormData((prev) => ({
+            ...prev,
+            images: prev.images.filter((_, imageIndex) => imageIndex !== index)
+        }));
     };
 
     const handleSave = async () => {
         try {
             const payload = {
                 ...formData,
+                image: formData.images[0] || '',
+                images: formData.images,
                 categoryId: Number(formData.categoryId),
                 price: Number(formData.price),
                 stock: Number(formData.stock || 0)
@@ -95,7 +135,7 @@ function AdminProducts() {
                 await api.post('/products', payload);
             }
 
-            setShowModal(false);
+            closeModal();
             fetchProducts();
         } catch (err) {
             setError(err.response?.data?.message || 'Không thể lưu sản phẩm');
@@ -215,11 +255,11 @@ function AdminProducts() {
             </div>
 
             {showModal && (
-                <div className="modal-overlay" onClick={() => setShowModal(false)}>
+                <div className="modal-overlay" onClick={closeModal}>
                     <div className="modal-content large" onClick={(e) => e.stopPropagation()}>
                         <div className="modal-header">
                             <h5>{selectedProduct ? 'Chỉnh sửa sản phẩm' : 'Thêm sản phẩm mới'}</h5>
-                            <button className="btn-close" onClick={() => setShowModal(false)}></button>
+                            <button className="btn-close" onClick={closeModal}></button>
                         </div>
                         <div className="modal-body">
                             <div className="form-group mb-3">
@@ -277,17 +317,39 @@ function AdminProducts() {
                             </div>
 
                             <div className="form-group mb-3">
-                                <label>URL hình ảnh</label>
+                                <label>Hình ảnh sản phẩm</label>
                                 <input
-                                    type="text"
+                                    type="file"
                                     className="form-control"
-                                    value={formData.image}
-                                    onChange={(e) => setFormData({ ...formData, image: e.target.value })}
+                                    accept="image/*"
+                                    multiple
+                                    onChange={handleImagesChange}
                                 />
+                                <small className="text-muted mt-2 d-block">
+                                    Tất cả ảnh đều chọn trực tiếp từ máy tính. Ảnh đầu tiên sẽ là ảnh đại diện.
+                                </small>
                             </div>
+
+                            {formData.images.length > 0 && (
+                                <div className="seller-image-grid">
+                                    {formData.images.map((image, index) => (
+                                        <div key={`${image}-${index}`} className="seller-image-item">
+                                            <img src={image} alt={`Sản phẩm ${index + 1}`} className="seller-image-preview" />
+                                            <button
+                                                type="button"
+                                                className="seller-image-remove"
+                                                onClick={() => removeImage(index)}
+                                            >
+                                                <i className="bi bi-x-lg"></i>
+                                            </button>
+                                            {index === 0 && <span className="seller-image-badge">Ảnh đại diện</span>}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                         <div className="modal-footer">
-                            <button className="btn btn-secondary" onClick={() => setShowModal(false)}>Hủy</button>
+                            <button className="btn btn-secondary" onClick={closeModal}>Hủy</button>
                             <button className="btn btn-primary" onClick={handleSave}>Lưu</button>
                         </div>
                     </div>
