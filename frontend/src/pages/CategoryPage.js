@@ -73,16 +73,16 @@ function CategoryPage() {
             <div className="d-flex justify-content-between align-items-center mb-4">
                 <h2>{currentCategory?.name || slug}</h2>
                 <button className="btn btn-outline-secondary" onClick={() => navigate('/products')}>
-                    Xem tat ca
+                    Xem tất cả
                 </button>
             </div>
 
             {loading ? (
-                <div>Dang tai...</div>
+                <div>Đang tải...</div>
             ) : (
                 <div className="categories-grid">
                     {filteredProducts.length === 0 ? (
-                        <p>Khong co san pham trong danh muc nay.</p>
+                        <p>Không có sản phẩm trong danh mục này.</p>
                     ) : (
                         filteredProducts.map((product) => {
                             const soldCount = getDerivedSoldCount(product);
@@ -112,9 +112,9 @@ function CategoryPage() {
                                     <div className="category-info">
                                         <h3>{product.name}</h3>
                                         <p className="products-meta">
-                                            <span>{soldCount} da ban</span>
+                                            <span>{soldCount} đã bán</span>
                                             {averageRating > 0 && <span>{averageRating}/5 sao</span>}
-                                            <span>{reviewCount} danh gia</span>
+                                            <span>{reviewCount} đánh giá</span>
                                         </p>
                                         <p style={{ color: '#666' }}>{product.description}</p>
                                         <p style={{ color: 'red', fontWeight: 700 }}>
@@ -127,7 +127,7 @@ function CategoryPage() {
                                                 openProductDetail(product);
                                             }}
                                         >
-                                            Xem chi tiet
+                                            Xem chi tiết
                                         </button>
                                     </div>
                                 </div>

@@ -56,10 +56,10 @@ function SellerDashboard() {
     );
 
     const stats = [
-        { title: 'San pham', value: products.length, icon: 'bi-box' },
-        { title: 'Don hang', value: orders.length, icon: 'bi-bag-check' },
-        { title: 'Doanh thu tam tinh', value: `${revenue.toLocaleString('vi-VN')} VND`, icon: 'bi-cash-stack' },
-        { title: 'Ton kho', value: totalStock, icon: 'bi-archive' }
+        { title: 'Sản phẩm', value: products.length, icon: 'bi-box' },
+        { title: 'Đơn hàng', value: orders.length, icon: 'bi-bag-check' },
+        { title: 'Doanh thu tạm tính', value: `${revenue.toLocaleString('vi-VN')} VND`, icon: 'bi-cash-stack' },
+        { title: 'Tồn kho', value: totalStock, icon: 'bi-archive' }
     ];
 
     if (loading) {
@@ -70,7 +70,7 @@ function SellerDashboard() {
         <div className="admin-page">
             <div className="admin-header-section">
                 <div>
-                    <h2>Kenh nguoi ban</h2>
+                    <h2>Kênh người bán</h2>
                     <p>{user?.shopName || user?.lastName || user?.firstName || user?.email}</p>
                 </div>
             </div>

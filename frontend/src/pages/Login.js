@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { requestPasswordReset } from '../services/AuthService';
 import {
     getSocialAuthConfigError,
     requestFacebookAccessToken,
@@ -11,15 +12,25 @@ import './auth.css';
 function Login({ show = true, onClose, onShowRegister }) {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [forgotEmail, setForgotEmail] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
     const [socialLoading, setSocialLoading] = useState('');
+    const [forgotLoading, setForgotLoading] = useState(false);
+    const [showForgotForm, setShowForgotForm] = useState(false);
     const [error, setError] = useState('');
+    const [forgotSuccess, setForgotSuccess] = useState('');
+    const [resetPreviewUrl, setResetPreviewUrl] = useState('');
     const { login, socialLogin } = useAuth();
 
     if (!show) return null;
 
     const handleClose = () => {
+        setShowForgotForm(false);
+        setForgotSuccess('');
+        setResetPreviewUrl('');
+        setError('');
+
         if (onClose) {
             onClose();
             return;
@@ -47,12 +58,14 @@ function Login({ show = true, onClose, onShowRegister }) {
         e.preventDefault();
         setLoading(true);
         setError('');
+        setForgotSuccess('');
+        setResetPreviewUrl('');
 
         try {
             await login(email, password);
+            if (onClose) onClose();
         } catch (err) {
-            console.error('Login error:', err);
-            const errorMsg = err?.message || err?.response?.data?.message || 'Email hoac mat khau khong chinh xac';
+            const errorMsg = err?.message || err?.response?.data?.message || 'Email hoặc mật khẩu không chính xác';
             setError(errorMsg);
         } finally {
             setLoading(false);
@@ -68,6 +81,7 @@ function Login({ show = true, onClose, onShowRegister }) {
 
         setSocialLoading(provider);
         setError('');
+        setForgotSuccess('');
 
         try {
             const accessToken = provider === 'google'
@@ -76,9 +90,27 @@ function Login({ show = true, onClose, onShowRegister }) {
             await socialLogin(provider, accessToken);
             if (onClose) onClose();
         } catch (err) {
-            setError(err.message || 'Dang nhap mang xa hoi that bai');
+            setError(err.message || 'Đăng nhập mạng xã hội thất bại');
         } finally {
             setSocialLoading('');
+        }
+    };
+
+    const handleForgotPassword = async (e) => {
+        e.preventDefault();
+        setForgotLoading(true);
+        setError('');
+        setForgotSuccess('');
+        setResetPreviewUrl('');
+
+        try {
+            const response = await requestPasswordReset(forgotEmail);
+            setForgotSuccess(response.message || 'Nếu email tồn tại, hệ thống đã gửi link đặt lại mật khẩu.');
+            setResetPreviewUrl(response.resetUrl || '');
+        } catch (err) {
+            setError(err.message || 'Không thể gửi email đặt lại mật khẩu');
+        } finally {
+            setForgotLoading(false);
         }
     };
 
@@ -121,106 +153,165 @@ function Login({ show = true, onClose, onShowRegister }) {
                 ></button>
 
                 <div className="auth-header">
-                    <h2>Dang Nhap</h2>
-                    <p>Chao mung quay lai TechShop</p>
+                    <h2>{showForgotForm ? 'Quên Mật Khẩu' : 'Đăng Nhập'}</h2>
+                    <p>
+                        {showForgotForm
+                            ? 'Nhập email để nhận link đặt lại mật khẩu.'
+                            : 'Chào mừng bạn quay lại TechShop'}
+                    </p>
                 </div>
 
                 {error && <div className="alert alert-danger">{error}</div>}
-
-                <form onSubmit={handleLogin} className="auth-form">
-                    <div className="form-group mb-3">
-                        <label className="form-label">
-                            <i className="bi bi-envelope"></i> Email
-                        </label>
-                        <input
-                            type="email"
-                            className="form-control form-control-lg"
-                            placeholder="Nhap email cua ban"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            required
-                        />
+                {forgotSuccess && <div className="alert alert-success">{forgotSuccess}</div>}
+                {resetPreviewUrl && (
+                    <div className="alert alert-warning">
+                        <div className="fw-semibold mb-2">Link đặt lại mật khẩu dùng cho local:</div>
+                        <a href={resetPreviewUrl}>{resetPreviewUrl}</a>
                     </div>
+                )}
 
-                    <div className="form-group mb-3">
-                        <label className="form-label">
-                            <i className="bi bi-lock"></i> Mat khau
-                        </label>
-                        <div className="password-input">
+                {showForgotForm ? (
+                    <form onSubmit={handleForgotPassword} className="auth-form">
+                        <div className="form-group mb-3">
+                            <label className="form-label">
+                                <i className="bi bi-envelope"></i> Email
+                            </label>
                             <input
-                                type={showPassword ? 'text' : 'password'}
+                                type="email"
                                 className="form-control form-control-lg"
-                                placeholder="Nhap mat khau"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
+                                placeholder="Nhập email tài khoản"
+                                value={forgotEmail}
+                                onChange={(e) => setForgotEmail(e.target.value)}
                                 required
                             />
+                        </div>
+
+                        <button type="submit" className="btn btn-login w-100 mb-3" disabled={forgotLoading}>
+                            {forgotLoading ? 'Đang gửi email...' : 'Gửi link đặt lại mật khẩu'}
+                        </button>
+
+                        <button
+                            type="button"
+                            className="btn btn-outline-secondary w-100"
+                            onClick={() => {
+                                setShowForgotForm(false);
+                                setForgotSuccess('');
+                                setResetPreviewUrl('');
+                                setError('');
+                            }}
+                        >
+                            Quay lại đăng nhập
+                        </button>
+                    </form>
+                ) : (
+                    <>
+                        <form onSubmit={handleLogin} className="auth-form">
+                            <div className="form-group mb-3">
+                                <label className="form-label">
+                                    <i className="bi bi-envelope"></i> Email
+                                </label>
+                                <input
+                                    type="email"
+                                    className="form-control form-control-lg"
+                                    placeholder="Nhập email của bạn"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    required
+                                />
+                            </div>
+
+                            <div className="form-group mb-3">
+                                <label className="form-label">
+                                    <i className="bi bi-lock"></i> Mật khẩu
+                                </label>
+                                <div className="password-input">
+                                    <input
+                                        type={showPassword ? 'text' : 'password'}
+                                        className="form-control form-control-lg"
+                                        placeholder="Nhập mật khẩu"
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
+                                        required
+                                    />
+                                    <button
+                                        type="button"
+                                        className="btn-toggle-password"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                    >
+                                        <i className={`bi ${showPassword ? 'bi-eye-slash' : 'bi-eye'}`}></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="form-check mb-3">
+                                <input type="checkbox" className="form-check-input" id="remember" />
+                                <label className="form-check-label" htmlFor="remember">
+                                    Ghi nhớ tôi
+                                </label>
+                            </div>
+
+                            <button type="submit" className="btn btn-login w-100 mb-3" disabled={loading}>
+                                {loading ? (
+                                    <>
+                                        <span className="spinner-border spinner-border-sm me-2"></span>
+                                        Đang đăng nhập...
+                                    </>
+                                ) : (
+                                    'Đăng Nhập'
+                                )}
+                            </button>
+                        </form>
+
+                        <div className="divider">HOẶC</div>
+
+                        <button
+                            type="button"
+                            className="btn btn-social google-login w-100 mb-2"
+                            onClick={() => handleSocialLogin('google')}
+                            disabled={Boolean(socialLoading)}
+                        >
+                            <i className="bi bi-google"></i> {socialLoading === 'google' ? 'Đang kết nối Google...' : 'Đăng nhập với Google'}
+                        </button>
+
+                        <button
+                            type="button"
+                            className="btn btn-social facebook-login w-100 mb-3"
+                            onClick={() => handleSocialLogin('facebook')}
+                            disabled={Boolean(socialLoading)}
+                        >
+                            <i className="bi bi-facebook"></i> {socialLoading === 'facebook' ? 'Đang kết nối Facebook...' : 'Đăng nhập với Facebook'}
+                        </button>
+
+                        <div className="auth-footer">
+                            <p>Bạn chưa có tài khoản?</p>
                             <button
                                 type="button"
-                                className="btn-toggle-password"
-                                onClick={() => setShowPassword(!showPassword)}
+                                className="link-primary btn btn-link"
+                                onClick={handleShowRegister}
+                                style={{ textDecoration: 'none', color: 'inherit', padding: 0, border: 'none', cursor: 'pointer' }}
                             >
-                                <i className={`bi ${showPassword ? 'bi-eye-slash' : 'bi-eye'}`}></i>
+                                Tạo tài khoản mới
                             </button>
                         </div>
-                    </div>
 
-                    <div className="form-check mb-3">
-                        <input type="checkbox" className="form-check-input" id="remember" />
-                        <label className="form-check-label" htmlFor="remember">
-                            Ghi nho toi
-                        </label>
-                    </div>
-
-                    <button type="submit" className="btn btn-login w-100 mb-3" disabled={loading}>
-                        {loading ? (
-                            <>
-                                <span className="spinner-border spinner-border-sm me-2"></span>
-                                Dang dang nhap...
-                            </>
-                        ) : (
-                            'Dang Nhap'
-                        )}
-                    </button>
-                </form>
-
-                <div className="divider">HOAC</div>
-
-                <button
-                    type="button"
-                    className="btn btn-social google-login w-100 mb-2"
-                    onClick={() => handleSocialLogin('google')}
-                    disabled={Boolean(socialLoading)}
-                >
-                    <i className="bi bi-google"></i> {socialLoading === 'google' ? 'Dang ket noi Google...' : 'Dang nhap voi Google'}
-                </button>
-
-                <button
-                    type="button"
-                    className="btn btn-social facebook-login w-100 mb-3"
-                    onClick={() => handleSocialLogin('facebook')}
-                    disabled={Boolean(socialLoading)}
-                >
-                    <i className="bi bi-facebook"></i> {socialLoading === 'facebook' ? 'Dang ket noi Facebook...' : 'Dang nhap voi Facebook'}
-                </button>
-
-                <div className="auth-footer">
-                    <p>Ban chua co tai khoan?</p>
-                    <button
-                        type="button"
-                        className="link-primary btn btn-link"
-                        onClick={handleShowRegister}
-                        style={{ textDecoration: 'none', color: 'inherit', padding: 0, border: 'none', cursor: 'pointer' }}
-                    >
-                        Tao tai khoan moi
-                    </button>
-                </div>
-
-                <div className="forgot-password">
-                    <Link to="#" className="link-secondary" onClick={handleClose}>
-                        Quen mat khau?
-                    </Link>
-                </div>
+                        <div className="forgot-password">
+                            <Link
+                                to="#"
+                                className="link-secondary"
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    setForgotEmail(email);
+                                    setShowForgotForm(true);
+                                    setError('');
+                                    setForgotSuccess('');
+                                    setResetPreviewUrl('');
+                                }}
+                            >
+                                Quên mật khẩu?
+                            </Link>
+                        </div>
+                    </>
+                )}
             </div>
         </div>
     );

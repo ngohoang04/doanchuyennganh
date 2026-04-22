@@ -24,7 +24,7 @@ function CartPage() {
             setCart(response.data);
             setError('');
         } catch (err) {
-            setError(err.response?.data?.message || 'Khong the tai gio hang');
+            setError(err.response?.data?.message || 'Không thể tải giỏ hàng');
         } finally {
             setLoading(false);
         }
@@ -35,7 +35,7 @@ function CartPage() {
             await updateCartItem(itemId, quantity);
             await fetchCart();
         } catch (err) {
-            window.alert(err.response?.data?.message || 'Khong the cap nhat so luong');
+            window.alert(err.response?.data?.message || 'Không thể cập nhật số lượng');
         }
     };
 
@@ -44,7 +44,7 @@ function CartPage() {
             await deleteCartItem(itemId);
             await fetchCart();
         } catch (err) {
-            window.alert(err.response?.data?.message || 'Khong the xoa san pham');
+            window.alert(err.response?.data?.message || 'Không thể xóa sản phẩm');
         }
     };
 
@@ -57,18 +57,18 @@ function CartPage() {
     return (
         <div className="container py-5">
             <div className="d-flex justify-content-between align-items-center mb-4">
-                <h2>Gio hang</h2>
+                <h2>Giỏ Hàng</h2>
                 <button className="btn btn-outline-secondary" onClick={() => navigate('/products')}>
-                    Tiep tuc mua hang
+                    Tiếp tục mua hàng
                 </button>
             </div>
 
             {error && <div className="alert alert-danger">{error}</div>}
 
             {loading ? (
-                <p>Dang tai gio hang...</p>
+                <p>Đang tải giỏ hàng...</p>
             ) : items.length === 0 ? (
-                <div className="alert alert-info">Gio hang cua ban dang trong.</div>
+                <div className="alert alert-info">Giỏ hàng của bạn đang trống.</div>
             ) : (
                 <div className="row g-4">
                     <div className="col-lg-8">
@@ -114,16 +114,16 @@ function CartPage() {
 
                     <div className="col-lg-4">
                         <div className="border rounded p-4 bg-white">
-                            <h4>Thanh toan</h4>
+                            <h4>Tạm tính đơn hàng</h4>
                             <p className="text-muted">
-                                Kiem tra dia chi nhan hang, voucher, van chuyen va thanh toan o buoc tiep theo.
+                                Kiểm tra địa chỉ nhận hàng, voucher, vận chuyển và thanh toán ở bước tiếp theo.
                             </p>
                             <div className="d-flex justify-content-between mb-3">
-                                <span>Tong tien</span>
+                                <span>Tổng tiền</span>
                                 <strong>{total.toLocaleString('vi-VN')} VND</strong>
                             </div>
                             <button className="btn btn-primary w-100" onClick={() => navigate('/checkout')}>
-                                Tiep tuc thanh toan
+                                Tiếp tục thanh toán
                             </button>
                         </div>
                     </div>

@@ -87,6 +87,23 @@ const validateLogin = (req, res, next) => {
     next();
 };
 
+const validateForgotPassword = (req, res, next) => {
+    if (!req.body.email || !validateEmail(req.body.email)) {
+        return res.status(400).json({ message: 'Email không hợp lệ' });
+    }
+    next();
+};
+
+const validateResetPassword = (req, res, next) => {
+    if (!req.body.token || String(req.body.token).trim().length === 0) {
+        return res.status(400).json({ message: 'Thiếu mã đặt lại mật khẩu' });
+    }
+    if (!validatePassword(req.body.newPassword)) {
+        return res.status(400).json({ message: 'Mật khẩu phải có ít nhất 6 ký tự' });
+    }
+    next();
+};
+
 module.exports = {
     validateFields,
     validateEmail,
@@ -94,5 +111,7 @@ module.exports = {
     validatePost,
     validateUser,
     validateRegister,
-    validateLogin
+    validateLogin,
+    validateForgotPassword,
+    validateResetPassword
 };

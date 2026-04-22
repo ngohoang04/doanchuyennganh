@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import api from '../services/Api';
 
 function AdminDashboard() {
@@ -18,16 +18,17 @@ function AdminDashboard() {
             setError('');
 
             const [usersRes, productsRes, ordersRes] = await Promise.all([
-                api.get('/users').catch(err => ({ data: [] })),
-                api.get('/products').catch(err => ({ data: [] })),
-                api.get('/orders').catch(err => ({ data: [] }))
+                api.get('/users').catch(() => ({ data: [] })),
+                api.get('/products').catch(() => ({ data: [] })),
+                api.get('/orders').catch(() => ({ data: [] }))
             ]);
 
-            const totalRevenue = (ordersRes.data || []).reduce((sum, order) => {
-                return String(order.status || '').toLowerCase() === 'completed'
+            const totalRevenue = (ordersRes.data || []).reduce((sum, order) => (
+                String(order.status || '').toLowerCase() === 'completed'
                     ? sum + Number(order.totalAmount || 0)
-                    : sum;
-            }, 0);
+                    : sum
+            ), 0);
+
             const totalStock = (productsRes.data || []).reduce(
                 (sum, product) => sum + Number(product.stock || 0),
                 0
@@ -42,7 +43,7 @@ function AdminDashboard() {
             });
         } catch (err) {
             console.error('Error fetching stats:', err);
-            setError('Có lỗi khi tải dữ liệu');
+            setError('Có lỗi khi tải dữ liệu.');
         } finally {
             setLoading(false);
         }
@@ -74,7 +75,7 @@ function AdminDashboard() {
     return (
         <div className="admin-page">
             <div className="admin-header-section">
-                <h2>Dashboard</h2>
+                <h2>Tổng quan hệ thống</h2>
             </div>
 
             {error && <div className="alert alert-danger">{error}</div>}
@@ -85,24 +86,9 @@ function AdminDashboard() {
                 </div>
             ) : (
                 <div className="stats-grid">
-                    <StatCard
-                        icon="bi-people"
-                        title="Người dùng"
-                        value={stats.totalUsers}
-                        color="#667eea"
-                    />
-                    <StatCard
-                        icon="bi-box"
-                        title="Sản phẩm"
-                        value={stats.totalProducts}
-                        color="#764ba2"
-                    />
-                    <StatCard
-                        icon="bi-bag-check"
-                        title="Đơn hàng"
-                        value={stats.totalOrders}
-                        color="#fa9b15"
-                    />
+                    <StatCard icon="bi-people" title="Người dùng" value={stats.totalUsers} color="#667eea" />
+                    <StatCard icon="bi-box" title="Sản phẩm" value={stats.totalProducts} color="#764ba2" />
+                    <StatCard icon="bi-bag-check" title="Đơn hàng" value={stats.totalOrders} color="#fa9b15" />
                     <StatCard
                         icon="bi-coin"
                         title="Doanh thu"
@@ -113,12 +99,7 @@ function AdminDashboard() {
                         }).format(stats.totalRevenue)}
                         color="#14a314"
                     />
-                    <StatCard
-                        icon="bi-archive"
-                        title="Tong ton kho"
-                        value={stats.totalStock}
-                        color="#0d6efd"
-                    />
+                    <StatCard icon="bi-archive" title="Tổng tồn kho" value={stats.totalStock} color="#0d6efd" />
                 </div>
             )}
 

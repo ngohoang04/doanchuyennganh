@@ -22,15 +22,15 @@ function AdminOrders() {
             const response = await api.get('/orders');
             setOrders(response.data || []);
         } catch (err) {
-            setError('Khong the tai danh sach don hang');
+            setError('Không thể tải danh sách đơn hàng');
         }
     };
 
     return (
         <div className="admin-page">
             <div className="admin-header-section">
-                <h2>Quan ly don hang</h2>
-                <p>Tong cong: {orders.length} don hang</p>
+                <h2>Quản lý đơn hàng</h2>
+                <p>Tổng cộng: {orders.length} đơn hàng</p>
             </div>
             {error && <div className="alert alert-danger">{error}</div>}
             <div className="table-responsive">
@@ -38,10 +38,10 @@ function AdminOrders() {
                     <thead>
                         <tr>
                             <th>ID</th>
-                            <th>Khach hang</th>
-                            <th>Dia chi</th>
-                            <th>Trang thai</th>
-                            <th>Tong tien</th>
+                            <th>Khách hàng</th>
+                            <th>Địa chỉ</th>
+                            <th>Trạng thái</th>
+                            <th>Tổng tiền</th>
                         </tr>
                     </thead>
                     <tbody>

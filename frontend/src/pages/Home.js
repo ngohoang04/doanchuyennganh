@@ -40,24 +40,20 @@ function Home() {
                     getProducts()
                 ]);
 
-                const icons = ['bi-phone', 'bi-laptop', 'bi-headphones', 'bi-controller', 'bi-display', 'bi-cpu'];
-                const mappedCategories = (categoriesRes.data || []).map((category, index) => ({
+                const mappedCategories = (categoriesRes.data || []).map((category) => ({
                     ...category,
                     slug: category.name.toLowerCase().trim().replace(/\s+/g, '-'),
-                    icon: icons[index % icons.length],
-                    image: `https://picsum.photos/seed/category-${category.id}/600/420`
+                    image: category.image || `https://picsum.photos/seed/category-${category.id}/600/420`
                 }));
 
                 setCategories(mappedCategories);
                 setFeaturedProducts((productsRes.data || []).slice(0, 4));
             } catch (error) {
-                const icons = ['bi-phone', 'bi-laptop', 'bi-headphones', 'bi-controller', 'bi-display', 'bi-cpu'];
                 setCategories(
-                    demoCategories.map((category, index) => ({
+                    demoCategories.map((category) => ({
                         ...category,
                         slug: category.name.toLowerCase().trim().replace(/\s+/g, '-'),
-                        icon: icons[index % icons.length],
-                        image: `https://picsum.photos/seed/category-${category.id}/600/420`
+                        image: category.image || `https://picsum.photos/seed/category-${category.id}/600/420`
                     }))
                 );
                 setFeaturedProducts(demoProducts.slice(0, 4));
@@ -68,10 +64,10 @@ function Home() {
     }, []);
 
     const announcements = [
-        { id: 1, icon: 'bi-percent', title: 'Giam gia den 50%', description: 'Khuyen mai lon cho nhieu san pham cong nghe' },
-        { id: 2, icon: 'bi-truck', title: 'Mien phi van chuyen', description: 'Cho don hang tu 500.000 VND tro len' },
-        { id: 3, icon: 'bi-shield-check', title: 'Bao hanh chinh hang', description: 'San pham co bao hanh ro rang tu nha ban' },
-        { id: 4, icon: 'bi-clock', title: 'Giao hang nhanh', description: 'Xu ly don nhanh va ho tro tren toan quoc' }
+        { id: 1, icon: 'bi-percent', title: 'Giảm giá đến 50%', description: 'Ưu đãi hấp dẫn cho nhiều sản phẩm công nghệ bán chạy.' },
+        { id: 2, icon: 'bi-truck', title: 'Miễn phí vận chuyển', description: 'Áp dụng cho đơn hàng từ 500.000 VND trở lên.' },
+        { id: 3, icon: 'bi-shield-check', title: 'Bảo hành chính hãng', description: 'Cam kết hàng chính hãng, rõ ràng chính sách sau mua.' },
+        { id: 4, icon: 'bi-clock', title: 'Giao hàng nhanh', description: 'Xử lý đơn linh hoạt và giao hàng trên toàn quốc.' }
     ];
 
     const openProductDetail = (product) => {
@@ -83,9 +79,9 @@ function Home() {
             <section className="hero-section">
                 <div className="hero-overlay"></div>
                 <div className="hero-content">
-                    <h1 className="hero-title">Chao mung den TechShop</h1>
-                    <p className="hero-subtitle">Nen tang mua sam cong nghe dua tren du lieu that tu he thong</p>
-                    <button className="hero-btn" onClick={() => navigate('/products')}>Kham pha ngay</button>
+                    <h1 className="hero-title">Mua Sắm Công Nghệ Chính Hãng</h1>
+                    <p className="hero-subtitle">Săn ưu đãi mỗi ngày với hàng loạt thiết bị cho học tập, làm việc và giải trí.</p>
+                    <button className="hero-btn" onClick={() => navigate('/products')}>Xem sản phẩm</button>
                 </div>
             </section>
 
@@ -105,8 +101,8 @@ function Home() {
 
             <section className="categories-section container">
                 <div className="section-header">
-                    <h2>Danh muc san pham</h2>
-                    <p>Kham pha danh muc duoc lay tu database hien tai</p>
+                    <h2>Danh Mục Nổi Bật</h2>
+                    <p>Chọn nhanh nhóm sản phẩm phù hợp với nhu cầu mua sắm của bạn.</p>
                 </div>
 
                 <div className="categories-grid">
@@ -116,12 +112,11 @@ function Home() {
                                 <img src={category.image} alt={category.name} />
                                 <div className="category-overlay">
                                     <button className="category-btn" onClick={() => navigate(`/category/${category.slug}`)}>
-                                        Xem danh muc
+                                        Xem danh mục
                                     </button>
                                 </div>
                             </div>
                             <div className="category-info">
-                                <i className={`bi ${category.icon}`}></i>
                                 <h3>{category.name}</h3>
                             </div>
                         </div>
@@ -131,8 +126,8 @@ function Home() {
 
             <section className="categories-section container">
                 <div className="section-header">
-                    <h2>San pham noi bat</h2>
-                    <p>Mot so san pham duoc hien thi nhanh tu database</p>
+                    <h2>Sản Phẩm Nổi Bật</h2>
+                    <p>Khám phá các lựa chọn nổi bật được nhiều khách hàng quan tâm.</p>
                 </div>
 
                 <div className="categories-grid">
@@ -166,16 +161,16 @@ function Home() {
                                                     openProductDetail(product);
                                                 }}
                                             >
-                                                Xem chi tiet
+                                                Xem chi tiết
                                             </button>
                                         </div>
                                     </div>
                                     <div className="category-info">
                                         <h3>{product.name}</h3>
                                         <p className="products-meta">
-                                            <span>{soldCount} da ban</span>
+                                            <span>{soldCount} đã bán</span>
                                             {averageRating > 0 && <span>{averageRating}/5 sao</span>}
-                                            <span>{reviewCount} danh gia</span>
+                                            <span>{reviewCount} đánh giá</span>
                                         </p>
                                         <p>{Number(product.price || 0).toLocaleString('vi-VN')} VND</p>
                                     </div>
@@ -189,9 +184,9 @@ function Home() {
             <section className="promo-section">
                 <div className="container">
                     <div className="promo-content">
-                        <h2>Dac biet hom nay</h2>
-                        <p>Mua sam thong minh, quan ly tap trung tren mot nen tang</p>
-                        <button className="promo-btn" onClick={() => navigate('/products')}>Xem san pham</button>
+                        <h2>Ưu Đãi Hôm Nay</h2>
+                        <p>Cập nhật deal tốt mỗi ngày để bạn mua sắm nhanh hơn và tiết kiệm hơn.</p>
+                        <button className="promo-btn" onClick={() => navigate('/products')}>Xem sản phẩm</button>
                     </div>
                 </div>
             </section>
@@ -199,8 +194,8 @@ function Home() {
             <section className="newsletter-section">
                 <div className="container">
                     <div className="newsletter-content">
-                        <h2>Trai nghiem du lieu that</h2>
-                        <p>San pham, danh muc, gio hang va don hang deu duoc doc ghi qua API va database hien tai</p>
+                        <h2>Mua Sắm Thuận Tiện Tại TechShop</h2>
+                        <p>Từ danh mục, giỏ hàng đến đơn hàng, mọi thao tác đều được đồng bộ để bạn mua sắm liền mạch.</p>
                     </div>
                 </div>
             </section>

@@ -116,16 +116,16 @@ function Products() {
     return (
         <div className="container py-5">
             <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
-                <h2>San pham</h2>
+                <h2>Tất Cả Sản Phẩm</h2>
                 <div className="d-flex">
                     <input
                         type="text"
                         className="form-control me-2"
-                        placeholder="Tim san pham..."
+                        placeholder="Tìm sản phẩm..."
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
                     />
-                    <button className="btn btn-primary" onClick={onSearch}>Tim</button>
+                    <button className="btn btn-primary" onClick={onSearch}>Tìm</button>
                 </div>
             </div>
 
@@ -133,42 +133,42 @@ function Products() {
                 <aside className="products-filter-panel">
                     <div className="products-filter-card">
                         <div className="products-filter-header">
-                            <h4>Bo loc</h4>
+                            <h4>Bộ lọc</h4>
                             <button type="button" className="btn btn-sm btn-outline-secondary" onClick={clearFilters}>
-                                Dat lai
+                                Đặt lại
                             </button>
                         </div>
 
                         <div className="products-filter-group">
-                            <label className="form-label">Muc gia</label>
+                            <label className="form-label">Mức giá</label>
                             <select className="form-select" value={priceRange} onChange={(e) => setPriceRange(e.target.value)}>
-                                <option value="all">Tat ca</option>
-                                <option value="under-5m">Duoi 5 trieu</option>
-                                <option value="5m-15m">Tu 5 den 15 trieu</option>
-                                <option value="15m-30m">Tu 15 den 30 trieu</option>
-                                <option value="over-30m">Tren 30 trieu</option>
+                                <option value="all">Tất cả</option>
+                                <option value="under-5m">Dưới 5 triệu</option>
+                                <option value="5m-15m">Từ 5 đến 15 triệu</option>
+                                <option value="15m-30m">Từ 15 đến 30 triệu</option>
+                                <option value="over-30m">Trên 30 triệu</option>
                             </select>
                         </div>
 
                         <div className="products-filter-group">
-                            <label className="form-label">Luot ban toi thieu</label>
+                            <label className="form-label">Lượt bán tối thiểu</label>
                             <select className="form-select" value={minSoldCount} onChange={(e) => setMinSoldCount(e.target.value)}>
-                                <option value="all">Tat ca</option>
-                                <option value="10">Tu 10</option>
-                                <option value="30">Tu 30</option>
-                                <option value="50">Tu 50</option>
-                                <option value="100">Tu 100</option>
+                                <option value="all">Tất cả</option>
+                                <option value="10">Từ 10</option>
+                                <option value="30">Từ 30</option>
+                                <option value="50">Từ 50</option>
+                                <option value="100">Từ 100</option>
                             </select>
                         </div>
 
                         <div className="products-filter-group">
-                            <label className="form-label">Luot danh gia toi thieu</label>
+                            <label className="form-label">Lượt đánh giá tối thiểu</label>
                             <select className="form-select" value={minReviewCount} onChange={(e) => setMinReviewCount(e.target.value)}>
-                                <option value="all">Tat ca</option>
-                                <option value="5">Tu 5</option>
-                                <option value="10">Tu 10</option>
-                                <option value="20">Tu 20</option>
-                                <option value="30">Tu 30</option>
+                                <option value="all">Tất cả</option>
+                                <option value="5">Từ 5</option>
+                                <option value="10">Từ 10</option>
+                                <option value="20">Từ 20</option>
+                                <option value="30">Từ 30</option>
                             </select>
                         </div>
                     </div>
@@ -176,15 +176,15 @@ function Products() {
 
                 <section className="products-content">
                     {loading ? (
-                        <div className="text-center">Dang tai...</div>
+                        <div className="text-center">Đang tải...</div>
                     ) : (
                         <>
                             <div className="products-summary">
-                                <strong>{filteredProducts.length}</strong> san pham phu hop
+                                <strong>{filteredProducts.length}</strong> sản phẩm phù hợp
                             </div>
                             <div className="categories-grid">
                                 {filteredProducts.length === 0 ? (
-                                    <p>Khong co san pham phu hop.</p>
+                                    <p>Không có sản phẩm phù hợp.</p>
                                 ) : (
                                     filteredProducts.map((product) => {
                                         const soldCount = getDerivedSoldCount(product);
@@ -214,9 +214,9 @@ function Products() {
                                                 <div className="category-info">
                                                     <h3>{product.name}</h3>
                                                     <p className="products-meta">
-                                                        <span>{soldCount} da ban</span>
+                                                        <span>{soldCount} đã bán</span>
                                                         {averageRating > 0 && <span>{averageRating}/5 sao</span>}
-                                                        <span>{reviewCount} danh gia</span>
+                                                        <span>{reviewCount} đánh giá</span>
                                                     </p>
                                                     <p style={{ color: '#666' }}>{product.description}</p>
                                                     <p style={{ color: 'red', fontWeight: 700 }}>
@@ -229,7 +229,7 @@ function Products() {
                                                             openProductDetail(product);
                                                         }}
                                                     >
-                                                        Xem chi tiet
+                                                        Xem chi tiết
                                                     </button>
                                                 </div>
                                             </div>

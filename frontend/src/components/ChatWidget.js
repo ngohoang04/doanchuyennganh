@@ -4,7 +4,7 @@ import { getChatContacts, getConversation, sendChatMessage } from '../services/s
 import './chat-widget.css';
 
 const getContactName = (contact) =>
-    contact?.shopName || [contact?.lastName, contact?.firstName].filter(Boolean).join(' ') || contact?.email || 'Nguoi dung';
+    contact?.shopName || [contact?.lastName, contact?.firstName].filter(Boolean).join(' ') || contact?.email || 'Người dùng';
 
 function ChatWidget() {
     const { user, isAuthenticated } = useAuth();
@@ -70,7 +70,7 @@ function ChatWidget() {
                     }
                 }
             } catch (err) {
-                setError(err.response?.data?.message || 'Khong the tai danh sach chat');
+                setError(err.response?.data?.message || 'Không thể tải danh sách chat');
             } finally {
                 setLoadingContacts(false);
             }
@@ -98,7 +98,7 @@ function ChatWidget() {
                 setSelectedContact((prev) => (prev ? { ...prev, unreadCount: 0 } : prev));
                 setError('');
             } catch (err) {
-                setError(err.response?.data?.message || 'Khong the tai noi dung chat');
+                setError(err.response?.data?.message || 'Không thể tải nội dung chat');
             } finally {
                 setLoadingMessages(false);
             }
@@ -149,7 +149,7 @@ function ChatWidget() {
             setMessageText('');
             setError('');
         } catch (err) {
-            setError(err.response?.data?.message || 'Khong the gui tin nhan');
+            setError(err.response?.data?.message || 'Không thể gửi tin nhắn');
         } finally {
             setSending(false);
         }
@@ -169,9 +169,9 @@ function ChatWidget() {
                 <div className="chat-widget-panel">
                     <div className="chat-widget-header">
                         <div>
-                            <div className="chat-widget-title">Tro chuyen</div>
+                            <div className="chat-widget-title">Trò chuyện</div>
                             <div className="chat-widget-subtitle">
-                                {selectedContact ? getContactName(selectedContact) : 'Chon mot cuoc tro chuyen'}
+                                {selectedContact ? getContactName(selectedContact) : 'Chọn một cuộc trò chuyện'}
                             </div>
                         </div>
                         <button type="button" className="chat-widget-close" onClick={() => setIsOpen(false)}>
@@ -183,12 +183,12 @@ function ChatWidget() {
 
                     <div className="chat-widget-body">
                         <div className="chat-widget-sidebar">
-                            <div className="chat-widget-sidebar-title">Lien he</div>
+                            <div className="chat-widget-sidebar-title">Liên hệ</div>
                             {loadingContacts ? (
-                                <div className="chat-widget-empty">Dang tai...</div>
+                                <div className="chat-widget-empty">Đang tải...</div>
                             ) : sortedContacts.length === 0 ? (
                                 <div className="chat-widget-empty">
-                                    Chua co hoi thoai. Ban co the vao trang san pham va bam "Chat voi shop".
+                                    Chưa có hội thoại. Bạn có thể vào trang sản phẩm và bấm "Chat với shop".
                                 </div>
                             ) : (
                                 <div className="chat-widget-contact-list">
@@ -205,7 +205,7 @@ function ChatWidget() {
                                                     <span className="chat-widget-contact-badge">{contact.unreadCount}</span>
                                                 )}
                                             </div>
-                                            <div className="chat-widget-contact-meta">{contact.lastMessage || 'Bat dau tro chuyen'}</div>
+                                            <div className="chat-widget-contact-meta">{contact.lastMessage || 'Bắt đầu trò chuyện'}</div>
                                         </button>
                                     ))}
                                 </div>
@@ -214,14 +214,14 @@ function ChatWidget() {
 
                         <div className="chat-widget-content">
                             {!selectedContact ? (
-                                <div className="chat-widget-empty large">Chon shop hoac nguoi mua de bat dau tro chuyen.</div>
+                                <div className="chat-widget-empty large">Chọn shop hoặc người mua để bắt đầu trò chuyện.</div>
                             ) : (
                                 <>
                                     <div className="chat-widget-messages">
                                         {loadingMessages ? (
-                                            <div className="chat-widget-empty">Dang tai tin nhan...</div>
+                                            <div className="chat-widget-empty">Đang tải tin nhắn...</div>
                                         ) : messages.length === 0 ? (
-                                            <div className="chat-widget-empty">Chua co tin nhan nao. Hay gui tin nhan dau tien.</div>
+                                            <div className="chat-widget-empty">Chưa có tin nhắn nào. Hãy gửi tin nhắn đầu tiên.</div>
                                         ) : (
                                             messages.map((message) => {
                                                 const isMine = String(message.senderId) === String(user.id);
@@ -242,12 +242,12 @@ function ChatWidget() {
                                         <textarea
                                             className="form-control"
                                             rows="2"
-                                            placeholder="Nhap tin nhan..."
+                                            placeholder="Nhập tin nhắn..."
                                             value={messageText}
                                             onChange={(e) => setMessageText(e.target.value)}
                                         />
                                         <button className="btn btn-primary" type="submit" disabled={sending || !messageText.trim()}>
-                                            {sending ? 'Dang gui...' : 'Gui'}
+                                            {sending ? 'Đang gửi...' : 'Gửi'}
                                         </button>
                                     </form>
                                 </>

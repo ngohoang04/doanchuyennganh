@@ -108,9 +108,9 @@ function Header() {
     };
 
     return (
-        <div>
+            <div>
             <div className="top-bar text-white text-center py-2">
-                <small><i className="bi bi-star-fill"></i> Nen tang mua sam cong nghe cho bai tap lon</small>
+                <small><i className="bi bi-star-fill"></i> Ưu đãi công nghệ chính hãng, giao nhanh trên toàn quốc</small>
             </div>
 
             <nav className="navbar navbar-expand-lg navbar-custom sticky-top">
@@ -137,7 +137,7 @@ function Header() {
                                     type="text"
                                     id="header-search-input"
                                     className="form-control search-input"
-                                    placeholder="Tim kiem san pham..."
+                                    placeholder="Tìm kiếm sản phẩm..."
                                 />
                                 <button className="btn btn-search" type="button" onClick={navigateSearch}>
                                     <i className="bi bi-search"></i>
@@ -148,7 +148,7 @@ function Header() {
                         <div className="d-flex gap-3 align-items-center header-icons">
                             {isAuthenticated && user && (
                                 <>
-                                    <button className="icon-btn position-relative" type="button" title="Gio hang" onClick={() => navigate('/cart')}>
+                                    <button className="icon-btn position-relative" type="button" title="Giỏ hàng" onClick={() => navigate('/cart')}>
                                         <i className="bi bi-cart3"></i>
                                         {cartCount > 0 && <span className="badge">{cartCount}</span>}
                                     </button>
@@ -175,21 +175,21 @@ function Header() {
                                     {showUserMenu && (
                                         <div className="user-dropdown">
                                             <div className="dropdown-header">
-                                                <p className="user-name">{displayName || 'Tai khoan'}</p>
+                                                <p className="user-name">{displayName || 'Tài khoản'}</p>
                                                 <p className="user-email">{user.email}</p>
                                             </div>
                                             <hr />
                                             <button className="dropdown-item" onClick={() => { navigate('/profile'); setShowUserMenu(false); }}>
-                                                <i className="bi bi-person"></i> Ho so
+                                                <i className="bi bi-person"></i> Hồ sơ
                                             </button>
                                             <button className="dropdown-item" onClick={() => { navigate('/orders'); setShowUserMenu(false); }}>
-                                                <i className="bi bi-bag"></i> Don hang
+                                                <i className="bi bi-bag"></i> Đơn hàng
                                             </button>
                                             {user.role === 'admin' && (
                                                 <>
                                                     <hr />
                                                     <button className="dropdown-item" onClick={() => { navigate('/admin'); setShowUserMenu(false); }}>
-                                                        <i className="bi bi-graph-up"></i> Quan ly he thong
+                                                        <i className="bi bi-graph-up"></i> Quản lý hệ thống
                                                     </button>
                                                 </>
                                             )}
@@ -197,19 +197,19 @@ function Header() {
                                                 <>
                                                     <hr />
                                                     <button className="dropdown-item" onClick={() => { navigate('/seller'); setShowUserMenu(false); }}>
-                                                        <i className="bi bi-shop"></i> Kenh nguoi ban
+                                                        <i className="bi bi-shop"></i> Kênh người bán
                                                     </button>
                                                 </>
                                             )}
                                             <hr />
                                             <button className="dropdown-item text-danger" onClick={handleLogout}>
-                                                <i className="bi bi-box-arrow-right"></i> Dang xuat
+                                                <i className="bi bi-box-arrow-right"></i> Đăng xuất
                                             </button>
                                         </div>
                                     )}
                                 </div>
                             ) : (
-                                <button className="icon-btn" type="button" title="Tai khoan" onClick={() => {
+                                <button className="icon-btn" type="button" title="Tài khoản" onClick={() => {
                                     setShowRegisterModal(false);
                                     setShowLoginModal(true);
                                 }}>

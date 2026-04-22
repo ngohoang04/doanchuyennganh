@@ -1,5 +1,8 @@
+const crypto = require('crypto');
+const { Op } = require('sequelize');
 const { User } = require('../models');
 const bcrypt = require('bcryptjs');
+const { sendMail } = require('../utils/mailer');
 
 class AuthService {
     static getBaseUserPayload(user) {
@@ -254,6 +257,110 @@ class AuthService {
         await user.save();
 
         return { message: 'Password changed successfully' };
+    }
+
+    static buildResetToken() {
+        const rawToken = crypto.randomBytes(32).toString('hex');
+        const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+        const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+
+        return {
+            rawToken,
+            tokenHash,
+            expiresAt
+        };
+    }
+
+    static buildResetUrl(rawToken) {
+        const frontendUrl = (process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, '');
+        return `${frontendUrl}/reset-password?token=${encodeURIComponent(rawToken)}`;
+    }
+
+    static async forgotPassword(email) {
+        const normalizedEmail = String(email || '').trim().toLowerCase();
+        const genericMessage = 'Nếu email tồn tại, hệ thống đã gửi liên kết đặt lại mật khẩu.';
+
+        if (!normalizedEmail) {
+            return { message: genericMessage };
+        }
+
+        const user = await User.findOne({ where: { email: normalizedEmail } });
+        if (!user) {
+            return { message: genericMessage };
+        }
+
+        const { rawToken, tokenHash, expiresAt } = this.buildResetToken();
+        user.resetPasswordTokenHash = tokenHash;
+        user.resetPasswordExpiresAt = expiresAt;
+        await user.save();
+
+        const resetUrl = this.buildResetUrl(rawToken);
+        const displayName = [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email;
+
+        try {
+            await sendMail({
+                to: user.email,
+                subject: 'TechShop - Yêu cầu đặt lại mật khẩu',
+                text: [
+                    `Xin chào ${displayName},`,
+                    '',
+                    'Chúng tôi đã nhận được yêu cầu đặt lại mật khẩu cho tài khoản TechShop của bạn.',
+                    `Đặt lại mật khẩu tại đây: ${resetUrl}`,
+                    '',
+                    'Liên kết này sẽ hết hạn sau 15 phút.',
+                    'Nếu bạn không yêu cầu thay đổi này, hãy bỏ qua email.'
+                ].join('\n'),
+                html: `
+                    <p>Xin chào ${displayName},</p>
+                    <p>Chúng tôi đã nhận được yêu cầu đặt lại mật khẩu cho tài khoản TechShop của bạn.</p>
+                    <p><a href="${resetUrl}">Đặt lại mật khẩu</a></p>
+                    <p>Liên kết này sẽ hết hạn sau 15 phút.</p>
+                    <p>Nếu bạn không yêu cầu thay đổi này, hãy bỏ qua email.</p>
+                `
+            });
+        } catch (error) {
+            if (String(process.env.NODE_ENV || '').toLowerCase() !== 'production') {
+                return {
+                    message: 'Chưa cấu hình SMTP. Đã tạo sẵn liên kết đặt lại mật khẩu để test local.',
+                    resetUrl
+                };
+            }
+            throw error;
+        }
+
+        return { message: genericMessage };
+    }
+
+    static async resetPassword(token, newPassword) {
+        const normalizedToken = String(token || '').trim();
+        if (!normalizedToken) {
+            throw new Error('Thiếu mã đặt lại mật khẩu');
+        }
+
+        if (!newPassword || newPassword.length < 6) {
+            throw new Error('Mật khẩu mới phải có ít nhất 6 ký tự');
+        }
+
+        const tokenHash = crypto.createHash('sha256').update(normalizedToken).digest('hex');
+        const user = await User.findOne({
+            where: {
+                resetPasswordTokenHash: tokenHash,
+                resetPasswordExpiresAt: {
+                    [Op.gt]: new Date()
+                }
+            }
+        });
+
+        if (!user) {
+            throw new Error('Liên kết đặt lại mật khẩu không hợp lệ hoặc đã hết hạn');
+        }
+
+        user.password = await bcrypt.hash(newPassword, 10);
+        user.resetPasswordTokenHash = null;
+        user.resetPasswordExpiresAt = null;
+        await user.save();
+
+        return { message: 'Đặt lại mật khẩu thành công' };
     }
 }
 

@@ -39,7 +39,9 @@ module.exports = (sequelize, DataTypes) => {
     idCardBack: { type: DataTypes.TEXT, field: 'id_card_back' },
     businessLicense: { type: DataTypes.TEXT, field: 'business_license' },
     bankAccount: { type: DataTypes.STRING, field: 'bank_account' },
-    shopLogo: { type: DataTypes.TEXT, field: 'shop_logo' }
+    shopLogo: { type: DataTypes.TEXT, field: 'shop_logo' },
+    resetPasswordTokenHash: { type: DataTypes.STRING, field: 'reset_password_token_hash' },
+    resetPasswordExpiresAt: { type: DataTypes.DATE, field: 'reset_password_expires_at' }
   }, {
     sequelize,
     modelName: 'User',

@@ -1,15 +1,24 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { useLocation, useParams } from 'react-router-dom';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { demoProducts } from '../services/demoData';
-import { addToCart, createReview, getProductById, getReviewEligibility, getReviewsByProduct } from '../services/shop';
+import {
+    addToCart,
+    createReview,
+    getProductById,
+    getProducts,
+    getReviewEligibility,
+    getReviewsByProduct
+} from '../services/shop';
 
 function ProductDetail() {
     const { id } = useParams();
     const location = useLocation();
+    const navigate = useNavigate();
     const { user, isAuthenticated } = useAuth();
     const [product, setProduct] = useState(null);
     const [reviews, setReviews] = useState([]);
+    const [similarProducts, setSimilarProducts] = useState([]);
     const [quantity, setQuantity] = useState(1);
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
@@ -30,6 +39,11 @@ function ProductDetail() {
         }
     }, [loading, product, location.state]);
 
+    const currentCategoryId = useMemo(
+        () => product?.categoryId || product?.category?.id || null,
+        [product]
+    );
+
     const fetchData = async () => {
         const fallbackProductFromState = location.state?.product && String(location.state.product.id) === String(id)
             ? location.state.product
@@ -39,16 +53,33 @@ function ProductDetail() {
 
         try {
             setLoading(true);
-            const [productRes, reviewsRes] = await Promise.all([
+            const [productRes, reviewsRes, productsRes] = await Promise.all([
                 getProductById(id),
-                getReviewsByProduct(id)
+                getReviewsByProduct(id),
+                getProducts()
             ]);
-            setProduct(productRes.data);
-            const gallery = Array.isArray(productRes.data?.images) && productRes.data.images.length > 0
-                ? productRes.data.images
-                : [productRes.data?.image].filter(Boolean);
-            setSelectedImage(gallery[0] || '');
+
+            const currentProduct = productRes.data;
+            const allProducts = productsRes.data || [];
+
+            setProduct(currentProduct);
             setReviews(reviewsRes.data || []);
+
+            const gallery = Array.isArray(currentProduct?.images) && currentProduct.images.length > 0
+                ? currentProduct.images
+                : [currentProduct?.image].filter(Boolean);
+            setSelectedImage(gallery[0] || '');
+
+            setSimilarProducts(
+                allProducts
+                    .filter((item) => {
+                        const itemCategoryId = item.categoryId || item.category?.id;
+                        const productCategoryId = currentProduct.categoryId || currentProduct.category?.id;
+                        return String(item.id) !== String(currentProduct.id) && String(itemCategoryId) === String(productCategoryId);
+                    })
+                    .slice(0, 4)
+            );
+
             if (isAuthenticated && user) {
                 try {
                     const eligibilityRes = await getReviewEligibility(id);
@@ -58,25 +89,34 @@ function ProductDetail() {
                         canReview: false,
                         hasPurchased: false,
                         hasReviewed: false,
-                        message: eligibilityError.response?.data?.message || 'Chua the kiem tra quyen danh gia'
+                        message: eligibilityError.response?.data?.message || 'Chưa thể kiểm tra quyền đánh giá'
                     });
                 }
             } else {
                 setReviewEligibility(null);
             }
+
             setError('');
         } catch (err) {
             if (fallbackProduct) {
                 setProduct(fallbackProduct);
+                setReviews([]);
+                setReviewEligibility(null);
+                setError('');
+
                 const gallery = Array.isArray(fallbackProduct?.images) && fallbackProduct.images.length > 0
                     ? fallbackProduct.images
                     : [fallbackProduct?.image].filter(Boolean);
                 setSelectedImage(gallery[0] || '');
-                setReviews([]);
-                setReviewEligibility(null);
-                setError('');
+
+                const fallbackCategoryId = fallbackProduct.categoryId || fallbackProduct.category?.id;
+                setSimilarProducts(
+                    demoProducts
+                        .filter((item) => String(item.id) !== String(fallbackProduct.id) && String(item.categoryId || item.category?.id) === String(fallbackCategoryId))
+                        .slice(0, 4)
+                );
             } else {
-                setError('Khong the tai chi tiet san pham');
+                setError('Không thể tải chi tiết sản phẩm');
                 setProduct(null);
             }
         } finally {
@@ -93,9 +133,9 @@ function ProductDetail() {
         try {
             setSubmitting(true);
             await addToCart(product.id, quantity);
-            window.alert('Da them san pham vao gio hang');
+            window.alert('Đã thêm sản phẩm vào giỏ hàng');
         } catch (err) {
-            window.alert(err.response?.data?.message || 'Khong the them vao gio hang');
+            window.alert(err.response?.data?.message || 'Không thể thêm vào giỏ hàng');
         } finally {
             setSubmitting(false);
         }
@@ -118,7 +158,7 @@ function ProductDetail() {
             setReviewForm({ rating: 5, comment: '' });
             await fetchData();
         } catch (err) {
-            window.alert(err.response?.data?.message || 'Khong the gui danh gia');
+            window.alert(err.response?.data?.message || 'Không thể gửi đánh giá');
         } finally {
             setSubmitting(false);
         }
@@ -131,9 +171,7 @@ function ProductDetail() {
         }
 
         const seller = product?.seller;
-        if (!seller?.id || String(seller.id) === String(user.id)) {
-            return;
-        }
+        if (!seller?.id || String(seller.id) === String(user.id)) return;
 
         window.dispatchEvent(new CustomEvent('open-chat', {
             detail: {
@@ -148,104 +186,151 @@ function ProductDetail() {
         }));
     };
 
-    if (loading) return <div className="container py-5">Dang tai...</div>;
-    if (!product) return <div className="container py-5">Khong tim thay san pham.</div>;
+    const openProduct = (nextProduct) => {
+        navigate(`/product/${nextProduct.id}`, { state: { product: nextProduct } });
+    };
+
+    if (loading) return <div className="container py-5">Đang tải...</div>;
+    if (!product) return <div className="container py-5">Không tìm thấy sản phẩm.</div>;
 
     const reviewNotice = !isAuthenticated || !user
-        ? 'Dang nhap va mua san pham de co the danh gia.'
-        : reviewEligibility?.message || 'Ban chi co the danh gia sau khi don hang da hoan thanh.';
+        ? 'Đăng nhập và mua sản phẩm để có thể đánh giá.'
+        : reviewEligibility?.message || 'Bạn chỉ có thể đánh giá sau khi đơn hàng đã hoàn thành.';
     const canReview = Boolean(reviewEligibility?.canReview);
     const hasReviewed = Boolean(reviewEligibility?.hasReviewed);
+    const gallery = Array.isArray(product.images) && product.images.length > 0
+        ? product.images
+        : [product.image].filter(Boolean);
 
     return (
         <div className="container py-5">
             {error && <div className="alert alert-danger">{error}</div>}
-            {(() => {
-                const gallery = Array.isArray(product.images) && product.images.length > 0
-                    ? product.images
-                    : [product.image].filter(Boolean);
 
-                return (
-
-                    <div className="row g-4">
-                        <div className="col-lg-5">
-                            <img
-                                src={selectedImage || product.image || 'https://via.placeholder.com/600x400?text=TechShop'}
-                                alt={product.name}
-                                className="img-fluid rounded shadow-sm"
-                            />
-                            {gallery.length > 1 && (
-                                <div className="d-flex gap-2 flex-wrap mt-3">
-                                    {gallery.map((image, index) => (
-                                        <button
-                                            key={`${image}-${index}`}
-                                            type="button"
-                                            className={`btn p-0 border ${selectedImage === image ? 'border-primary' : 'border-light'}`}
-                                            onClick={() => setSelectedImage(image)}
-                                        >
-                                            <img
-                                                src={image}
-                                                alt={`${product.name} ${index + 1}`}
-                                                style={{ width: 84, height: 84, objectFit: 'cover', borderRadius: 8 }}
-                                            />
-                                        </button>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                        <div className="col-lg-7">
-                            <p className="text-muted mb-2">{product.category?.name || 'San pham'}</p>
-                            <h1>{product.name}</h1>
-                            <p className="fs-3 fw-bold text-danger">
-                                {Number(product.price || 0).toLocaleString('vi-VN')} VND
-                            </p>
-                            <p>{product.description || 'Chua co mo ta cho san pham nay.'}</p>
-                            <p><strong>Ton kho:</strong> {product.stock ?? 0}</p>
-                            <p><strong>Nguoi ban:</strong> {product.seller?.shopName || product.seller?.lastName || product.seller?.firstName || 'TechShop'}</p>
-
-                            <div className="d-flex gap-3 align-items-center my-4">
-                                <input
-                                    type="number"
-                                    min="1"
-                                    max={product.stock || 1}
-                                    className="form-control"
-                                    style={{ width: 120 }}
-                                    value={quantity}
-                                    onChange={(e) => setQuantity(Math.max(1, Number(e.target.value) || 1))}
-                                />
+            <div className="row g-4">
+                <div className="col-lg-5">
+                    <img
+                        src={selectedImage || product.image || 'https://via.placeholder.com/600x400?text=TechShop'}
+                        alt={product.name}
+                        className="img-fluid rounded shadow-sm"
+                    />
+                    {gallery.length > 1 && (
+                        <div className="d-flex gap-2 flex-wrap mt-3">
+                            {gallery.map((image, index) => (
                                 <button
-                                    className="btn btn-primary btn-lg"
-                                    disabled={submitting || !product.stock}
-                                    onClick={handleAddToCart}
+                                    key={`${image}-${index}`}
+                                    type="button"
+                                    className={`btn p-0 border ${selectedImage === image ? 'border-primary' : 'border-light'}`}
+                                    onClick={() => setSelectedImage(image)}
                                 >
-                                    Them vao gio hang
+                                    <img
+                                        src={image}
+                                        alt={`${product.name} ${index + 1}`}
+                                        style={{ width: 84, height: 84, objectFit: 'cover', borderRadius: 8 }}
+                                    />
                                 </button>
-                                {product?.seller?.id && String(product.seller.id) !== String(user?.id) && (
-                                    <button
-                                        type="button"
-                                        className="btn btn-outline-secondary btn-lg"
-                                        onClick={handleOpenChat}
-                                    >
-                                        Chat voi shop
-                                    </button>
-                                )}
-                            </div>
+                            ))}
                         </div>
+                    )}
+                </div>
+
+                <div className="col-lg-7">
+                    <p className="text-muted mb-2">{product.category?.name || 'Sản phẩm'}</p>
+                    <h1>{product.name}</h1>
+                    <p className="fs-3 fw-bold text-danger">
+                        {Number(product.price || 0).toLocaleString('vi-VN')} VND
+                    </p>
+                    <p>{product.description || 'Chưa có mô tả cho sản phẩm này.'}</p>
+                    <p><strong>Tồn kho:</strong> {product.stock ?? 0}</p>
+                    <p><strong>Người bán:</strong> {product.seller?.shopName || product.seller?.lastName || product.seller?.firstName || 'TechShop'}</p>
+
+                    <div className="d-flex gap-3 align-items-center my-4 flex-wrap">
+                        <input
+                            type="number"
+                            min="1"
+                            max={product.stock || 1}
+                            className="form-control"
+                            style={{ width: 120 }}
+                            value={quantity}
+                            onChange={(e) => setQuantity(Math.max(1, Number(e.target.value) || 1))}
+                        />
+                        <button
+                            className="btn btn-primary btn-lg"
+                            disabled={submitting || !product.stock}
+                            onClick={handleAddToCart}
+                        >
+                            Thêm vào giỏ hàng
+                        </button>
+                        {product?.seller?.id && String(product.seller.id) !== String(user?.id) && (
+                            <button
+                                type="button"
+                                className="btn btn-outline-secondary btn-lg"
+                                onClick={handleOpenChat}
+                            >
+                                Chat với shop
+                            </button>
+                        )}
                     </div>
-                );
-            })()}
+                </div>
+            </div>
+
+            {similarProducts.length > 0 && (
+                <section className="mt-5">
+                    <div className="d-flex justify-content-between align-items-center mb-3">
+                        <h3 className="mb-0">Sản phẩm tương tự</h3>
+                        <button
+                            type="button"
+                            className="btn btn-outline-secondary btn-sm"
+                            onClick={() => navigate(currentCategoryId ? `/category/${(product.category?.name || '').toLowerCase().trim().replace(/\s+/g, '-')}` : '/products')}
+                        >
+                            Xem thêm
+                        </button>
+                    </div>
+
+                    <div className="row g-3">
+                        {similarProducts.map((item) => (
+                            <div key={item.id} className="col-md-6 col-xl-3">
+                                <div
+                                    className="border rounded p-3 h-100 bg-white"
+                                    role="button"
+                                    tabIndex={0}
+                                    style={{ cursor: 'pointer' }}
+                                    onClick={() => openProduct(item)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter' || e.key === ' ') {
+                                            e.preventDefault();
+                                            openProduct(item);
+                                        }
+                                    }}
+                                >
+                                    <img
+                                        src={item.image || 'https://via.placeholder.com/300x220?text=TechShop'}
+                                        alt={item.name}
+                                        className="img-fluid rounded mb-3"
+                                        style={{ width: '100%', height: 180, objectFit: 'cover' }}
+                                    />
+                                    <div className="fw-semibold mb-2">{item.name}</div>
+                                    <div className="text-muted small mb-2">{item.category?.name || product.category?.name}</div>
+                                    <div className="text-danger fw-bold">
+                                        {Number(item.price || 0).toLocaleString('vi-VN')} VND
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </section>
+            )}
 
             <div className="row mt-5">
                 <div className="col-lg-7">
-                    <h3 className="mb-3">Danh gia</h3>
+                    <h3 className="mb-3">Đánh giá</h3>
                     {reviews.length === 0 ? (
-                        <p className="text-muted">Chua co danh gia nao.</p>
+                        <p className="text-muted">Chưa có đánh giá nào.</p>
                     ) : (
                         <div className="d-flex flex-column gap-3">
                             {reviews.map((review) => (
                                 <div key={review.id} className="border rounded p-3 bg-white">
                                     <div className="d-flex justify-content-between">
-                                        <strong>{review.user?.lastName || review.user?.firstName || 'Nguoi dung'}</strong>
+                                        <strong>{review.user?.lastName || review.user?.firstName || 'Người dùng'}</strong>
                                         <span>{'★'.repeat(review.rating || 0)}</span>
                                     </div>
                                     <p className="mb-0 mt-2">{review.comment}</p>
@@ -257,7 +342,7 @@ function ProductDetail() {
 
                 {!hasReviewed && (
                     <div className="col-lg-5" ref={reviewSectionRef}>
-                        <h3 className="mb-3">Viet danh gia</h3>
+                        <h3 className="mb-3">Viết đánh giá</h3>
                         <div className="border rounded p-3 bg-white">
                             <div className={`alert ${canReview ? 'alert-success' : 'alert-secondary'} mb-3`}>
                                 {reviewNotice}
@@ -266,7 +351,7 @@ function ProductDetail() {
                             {canReview ? (
                                 <form onSubmit={handleSubmitReview}>
                                     <div className="mb-3">
-                                        <label className="form-label">So sao</label>
+                                        <label className="form-label">Số sao</label>
                                         <select
                                             className="form-select"
                                             value={reviewForm.rating}
@@ -278,7 +363,7 @@ function ProductDetail() {
                                         </select>
                                     </div>
                                     <div className="mb-3">
-                                        <label className="form-label">Nhan xet</label>
+                                        <label className="form-label">Nhận xét</label>
                                         <textarea
                                             className="form-control"
                                             rows="4"
@@ -287,7 +372,7 @@ function ProductDetail() {
                                             required
                                         />
                                     </div>
-                                    <button className="btn btn-dark" disabled={submitting}>Gui danh gia</button>
+                                    <button className="btn btn-dark" disabled={submitting}>Gửi đánh giá</button>
                                 </form>
                             ) : (
                                 <button
@@ -300,7 +385,7 @@ function ProductDetail() {
                                     }}
                                     disabled={isAuthenticated && user}
                                 >
-                                    Dang nhap de danh gia
+                                    Đăng nhập để đánh giá
                                 </button>
                             )}
                         </div>

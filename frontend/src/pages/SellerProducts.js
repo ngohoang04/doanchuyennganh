@@ -34,7 +34,7 @@ function SellerProducts() {
             const response = await api.get('/products/seller/mine');
             setProducts(response.data || []);
         } catch (err) {
-            setError('Khong the tai danh sach san pham');
+            setError('Không thể tải danh sách sản phẩm');
         }
     };
 
@@ -97,7 +97,7 @@ function SellerProducts() {
                 }));
             })
             .catch(() => {
-                setError('Khong the doc tep hinh anh');
+                setError('Không thể đọc tệp hình ảnh');
             });
     };
 
@@ -127,17 +127,17 @@ function SellerProducts() {
             setShowModal(false);
             fetchProducts();
         } catch (err) {
-            setError(err.response?.data?.message || 'Khong the luu san pham');
+            setError(err.response?.data?.message || 'Không thể lưu sản phẩm');
         }
     };
 
     const handleDelete = async (id) => {
-        if (!window.confirm('Ban chac chan muon xoa san pham nay?')) return;
+        if (!window.confirm('Bạn chắc chắn muốn xóa sản phẩm này?')) return;
         try {
             await api.delete(`/products/${id}`);
             fetchProducts();
         } catch (err) {
-            setError(err.response?.data?.message || 'Khong the xoa san pham');
+            setError(err.response?.data?.message || 'Không thể xóa sản phẩm');
         }
     };
 
@@ -145,11 +145,11 @@ function SellerProducts() {
         <div className="admin-page">
             <div className="admin-header-section">
                 <div>
-                    <h2>San pham cua toi</h2>
-                    <p>Tong cong: {products.length} san pham</p>
+                    <h2>Sản phẩm của tôi</h2>
+                    <p>Tổng cộng: {products.length} sản phẩm</p>
                 </div>
                 <button className="btn btn-primary" onClick={openCreate}>
-                    <i className="bi bi-plus-circle"></i> Them san pham
+                    <i className="bi bi-plus-circle"></i> Thêm sản phẩm
                 </button>
             </div>
 
@@ -160,12 +160,12 @@ function SellerProducts() {
                     <thead>
                         <tr>
                             <th>ID</th>
-                            <th>Anh</th>
-                            <th>Ten</th>
-                            <th>Danh muc</th>
-                            <th>Gia</th>
+                            <th>Ảnh</th>
+                            <th>Tên</th>
+                            <th>Danh mục</th>
+                            <th>Giá</th>
                             <th>Kho</th>
-                            <th>Hanh dong</th>
+                            <th>Hành động</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -195,17 +195,17 @@ function SellerProducts() {
                 <div className="modal-overlay" onClick={() => setShowModal(false)}>
                     <div className="modal-content large" onClick={(e) => e.stopPropagation()}>
                         <div className="modal-header">
-                            <h5>{selectedProduct ? 'Chinh sua san pham' : 'Them san pham moi'}</h5>
+                            <h5>{selectedProduct ? 'Chỉnh sửa sản phẩm' : 'Thêm sản phẩm mới'}</h5>
                             <button className="btn-close" onClick={() => setShowModal(false)}></button>
                         </div>
                         <div className="modal-body">
                             <div className="form-group mb-3">
-                                <label>Ten san pham</label>
+                                <label>Tên sản phẩm</label>
                                 <input className="form-control" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} />
                             </div>
                             <div className="form-row">
                                 <div className="form-group mb-3">
-                                    <label>Gia</label>
+                                    <label>Giá</label>
                                     <input type="number" className="form-control" value={formData.price} onChange={(e) => setFormData({ ...formData, price: e.target.value })} />
                                 </div>
                                 <div className="form-group mb-3">
@@ -213,9 +213,9 @@ function SellerProducts() {
                                     <input type="number" className="form-control" value={formData.stock} onChange={(e) => setFormData({ ...formData, stock: e.target.value })} />
                                 </div>
                                 <div className="form-group mb-3">
-                                    <label>Danh muc</label>
+                                    <label>Danh mục</label>
                                     <select className="form-control" value={formData.categoryId} onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}>
-                                        <option value="">Chon danh muc</option>
+                                        <option value="">Chọn danh mục</option>
                                         {categories.map((category) => (
                                             <option key={category.id} value={category.id}>{category.name}</option>
                                         ))}
@@ -223,11 +223,11 @@ function SellerProducts() {
                                 </div>
                             </div>
                             <div className="form-group mb-3">
-                                <label>Mo ta</label>
+                                <label>Mô tả</label>
                                 <textarea className="form-control" rows="4" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })}></textarea>
                             </div>
                             <div className="form-group mb-3">
-                                <label>Hinh anh san pham</label>
+                                <label>Hình ảnh sản phẩm</label>
                                 <input
                                     type="file"
                                     className="form-control"
@@ -236,14 +236,14 @@ function SellerProducts() {
                                     onChange={handleImagesChange}
                                 />
                                 <small className="text-muted mt-2 d-block">
-                                    Co the chon nhieu anh. Anh dau tien se duoc dung lam anh dai dien.
+                                    Có thể chọn nhiều ảnh. Ảnh đầu tiên sẽ được dùng làm ảnh đại diện.
                                 </small>
                             </div>
                             {formData.images.length > 0 && (
                                 <div className="seller-image-grid">
                                     {formData.images.map((image, index) => (
                                         <div key={`${image}-${index}`} className="seller-image-item">
-                                            <img src={image} alt={`San pham ${index + 1}`} className="seller-image-preview" />
+                                            <img src={image} alt={`Sản phẩm ${index + 1}`} className="seller-image-preview" />
                                             <button
                                                 type="button"
                                                 className="seller-image-remove"
@@ -251,19 +251,19 @@ function SellerProducts() {
                                             >
                                                 <i className="bi bi-x-lg"></i>
                                             </button>
-                                            {index === 0 && <span className="seller-image-badge">Anh dai dien</span>}
+                                            {index === 0 && <span className="seller-image-badge">Ảnh đại diện</span>}
                                         </div>
                                     ))}
                                 </div>
                             )}
                             <div className="form-group mb-3">
-                                <label>Tong so anh</label>
+                                <label>Tổng số ảnh</label>
                                 <input className="form-control" value={formData.images.length} disabled />
                             </div>
                         </div>
                         <div className="modal-footer">
-                            <button className="btn btn-secondary" onClick={() => setShowModal(false)}>Huy</button>
-                            <button className="btn btn-primary" onClick={handleSave}>Luu</button>
+                            <button className="btn btn-secondary" onClick={() => setShowModal(false)}>Hủy</button>
+                            <button className="btn btn-primary" onClick={handleSave}>Lưu</button>
                         </div>
                     </div>
                 </div>

@@ -35,7 +35,7 @@ function VoucherManagement() {
             setVouchers(response.data || []);
             setError('');
         } catch (err) {
-            setError(err.response?.data?.message || 'Khong the tai danh sach voucher');
+            setError(err.response?.data?.message || 'Không thể tải danh sách voucher');
         }
     };
 
@@ -82,17 +82,17 @@ function VoucherManagement() {
             setShowModal(false);
             fetchVouchers();
         } catch (err) {
-            setError(err.response?.data?.message || 'Khong the luu voucher');
+            setError(err.response?.data?.message || 'Không thể lưu voucher');
         }
     };
 
     const handleDelete = async (id) => {
-        if (!window.confirm('Ban chac chan muon xoa voucher nay?')) return;
+        if (!window.confirm('Bạn chắc chắn muốn xóa voucher này?')) return;
         try {
             await deleteVoucher(id);
             fetchVouchers();
         } catch (err) {
-            setError(err.response?.data?.message || 'Khong the xoa voucher');
+            setError(err.response?.data?.message || 'Không thể xóa voucher');
         }
     };
 
@@ -101,10 +101,10 @@ function VoucherManagement() {
             <div className="admin-header-section">
                 <div>
                     <h2>Ma giam gia</h2>
-                    <p>{user?.role === 'admin' ? 'Quan ly voucher he thong' : 'Quan ly voucher cua shop'}</p>
+                    <p>{user?.role === 'admin' ? 'Quản lý voucher hệ thống' : 'Quản lý voucher của shop'}</p>
                 </div>
                 <button className="btn btn-primary" onClick={openCreate}>
-                    <i className="bi bi-ticket-perforated"></i> Tao voucher
+                    <i className="bi bi-ticket-perforated"></i> Tạo voucher
                 </button>
             </div>
 
@@ -115,12 +115,12 @@ function VoucherManagement() {
                     <thead>
                         <tr>
                             <th>Code</th>
-                            <th>Ten</th>
-                            <th>Loai</th>
-                            <th>Gia tri</th>
-                            <th>Don toi thieu</th>
-                            <th>Trang thai</th>
-                            <th>Hanh dong</th>
+                            <th>Tên</th>
+                            <th>Loại</th>
+                            <th>Giá trị</th>
+                            <th>Đơn tối thiểu</th>
+                            <th>Trạng thái</th>
+                            <th>Hành động</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -128,7 +128,7 @@ function VoucherManagement() {
                             <tr key={voucher.id}>
                                 <td><strong>{voucher.code}</strong></td>
                                 <td>{voucher.name}</td>
-                                <td>{voucher.discountType === 'percent' ? 'Phan tram' : 'Tien mat'}</td>
+                                <td>{voucher.discountType === 'percent' ? 'Phần trăm' : 'Tiền mặt'}</td>
                                 <td>
                                     {voucher.discountType === 'percent'
                                         ? `${Number(voucher.discountValue || 0)}%`
@@ -140,7 +140,7 @@ function VoucherManagement() {
                                     )}
                                 </td>
                                 <td>{Number(voucher.minOrderValue || 0).toLocaleString('vi-VN')} VND</td>
-                                <td>{voucher.isActive ? 'Dang bat' : 'Da tat'}</td>
+                                <td>{voucher.isActive ? 'Đang bật' : 'Đã tắt'}</td>
                                 <td>
                                     <button className="btn btn-sm btn-edit" onClick={() => openEdit(voucher)}>
                                         <i className="bi bi-pencil"></i>
@@ -159,74 +159,74 @@ function VoucherManagement() {
                 <div className="modal-overlay" onClick={() => setShowModal(false)}>
                     <div className="modal-content large" onClick={(e) => e.stopPropagation()}>
                         <div className="modal-header">
-                            <h5>{selectedVoucher ? 'Chinh sua voucher' : 'Tao voucher moi'}</h5>
+                            <h5>{selectedVoucher ? 'Chỉnh sửa voucher' : 'Tạo voucher mới'}</h5>
                             <button className="btn-close" onClick={() => setShowModal(false)}></button>
                         </div>
                         <div className="modal-body">
                             <div className="form-row">
                                 <div className="form-group mb-3">
-                                    <label>Ma voucher</label>
+                                    <label>Mã voucher</label>
                                     <input className="form-control" value={formData.code} onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })} />
                                 </div>
                                 <div className="form-group mb-3">
-                                    <label>Ten voucher</label>
+                                    <label>Tên voucher</label>
                                     <input className="form-control" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} />
                                 </div>
                             </div>
                             <div className="form-group mb-3">
-                                <label>Mo ta</label>
+                                <label>Mô tả</label>
                                 <textarea className="form-control" rows="3" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })}></textarea>
                             </div>
                             <div className="form-row">
                                 <div className="form-group mb-3">
-                                    <label>Loai giam</label>
+                                    <label>Loại giảm</label>
                                     <select className="form-control" value={formData.discountType} onChange={(e) => setFormData({ ...formData, discountType: e.target.value })}>
-                                        <option value="fixed">Giam tien</option>
-                                        <option value="percent">Giam phan tram</option>
+                                        <option value="fixed">Giảm tiền</option>
+                                        <option value="percent">Giảm phần trăm</option>
                                     </select>
                                 </div>
                                 <div className="form-group mb-3">
-                                    <label>Gia tri giam</label>
+                                    <label>Giá trị giảm</label>
                                     <input type="number" className="form-control" value={formData.discountValue} onChange={(e) => setFormData({ ...formData, discountValue: e.target.value })} />
                                 </div>
                             </div>
                             <div className="form-row">
                                 <div className="form-group mb-3">
-                                    <label>Don toi thieu</label>
+                                    <label>Đơn tối thiểu</label>
                                     <input type="number" className="form-control" value={formData.minOrderValue} onChange={(e) => setFormData({ ...formData, minOrderValue: e.target.value })} />
                                 </div>
                                 <div className="form-group mb-3">
-                                    <label>Giam toi da</label>
+                                    <label>Giảm tối đa</label>
                                     <input type="number" className="form-control" value={formData.maxDiscount} onChange={(e) => setFormData({ ...formData, maxDiscount: e.target.value })} />
                                 </div>
                             </div>
                             <div className="form-row">
                                 <div className="form-group mb-3">
-                                    <label>Giam phi ship</label>
+                                    <label>Giảm phí ship</label>
                                     <input type="number" className="form-control" value={formData.shippingDiscount} onChange={(e) => setFormData({ ...formData, shippingDiscount: e.target.value })} />
                                 </div>
                                 <div className="form-group mb-3">
-                                    <label>Trang thai</label>
+                                    <label>Trạng thái</label>
                                     <select className="form-control" value={String(formData.isActive)} onChange={(e) => setFormData({ ...formData, isActive: e.target.value === 'true' })}>
-                                        <option value="true">Dang bat</option>
-                                        <option value="false">Da tat</option>
+                                        <option value="true">Đang bật</option>
+                                        <option value="false">Đã tắt</option>
                                     </select>
                                 </div>
                             </div>
                             <div className="form-row">
                                 <div className="form-group mb-3">
-                                    <label>Bat dau</label>
+                                    <label>Bắt đầu</label>
                                     <input type="datetime-local" className="form-control" value={formData.startsAt} onChange={(e) => setFormData({ ...formData, startsAt: e.target.value })} />
                                 </div>
                                 <div className="form-group mb-3">
-                                    <label>Ket thuc</label>
+                                    <label>Kết thúc</label>
                                     <input type="datetime-local" className="form-control" value={formData.endsAt} onChange={(e) => setFormData({ ...formData, endsAt: e.target.value })} />
                                 </div>
                             </div>
                         </div>
                         <div className="modal-footer">
-                            <button className="btn btn-secondary" onClick={() => setShowModal(false)}>Huy</button>
-                            <button className="btn btn-primary" onClick={handleSave}>Luu</button>
+                            <button className="btn btn-secondary" onClick={() => setShowModal(false)}>Hủy</button>
+                            <button className="btn btn-primary" onClick={handleSave}>Lưu</button>
                         </div>
                     </div>
                 </div>

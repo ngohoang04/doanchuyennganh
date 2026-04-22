@@ -1,8 +1,10 @@
 'use strict';
 /** @type {import('sequelize-cli').Migration} */
+const { addColumnIfMissing, removeColumnIfExists } = require('./helpers/schema');
+
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.addColumn('Messages', 'isRead', {
+    await addColumnIfMissing(queryInterface, ['Messages', 'messages'], 'isRead', {
       type: Sequelize.BOOLEAN,
       allowNull: false,
       defaultValue: false
@@ -10,6 +12,6 @@ module.exports = {
   },
 
   async down(queryInterface, Sequelize) {
-    await queryInterface.removeColumn('Messages', 'isRead');
+    await removeColumnIfExists(queryInterface, ['Messages', 'messages'], 'isRead');
   }
 };

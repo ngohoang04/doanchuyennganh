@@ -17,7 +17,7 @@ function AdminSellerRequests() {
     const getDisplayName = (request) =>
         [request?.lastName, request?.firstName].filter(Boolean).join(' ') ||
         request?.email ||
-        'Nguoi dung';
+        'Người dùng';
 
     const fetchSellerRequests = async () => {
         try {
@@ -26,7 +26,7 @@ function AdminSellerRequests() {
             const response = await api.get('/users/seller-requests/pending');
             setRequests(response.data || []);
         } catch (err) {
-            setError('Khong the tai danh sach yeu cau');
+            setError('Không thể tải danh sách yêu cầu');
             console.error(err);
         } finally {
             setLoading(false);
@@ -34,33 +34,33 @@ function AdminSellerRequests() {
     };
 
     const handleApprove = async (id, displayName) => {
-        if (!window.confirm(`Ban chac chan muon phe duyet ${displayName} tro thanh nguoi ban?`)) {
+        if (!window.confirm(`Bạn chắc chắn muốn phê duyệt ${displayName} trở thành người bán?`)) {
             return;
         }
 
         try {
             await api.post(`/users/seller-requests/${id}/approve`);
-            setSuccessMessage(`Da phe duyet yeu cau cua ${displayName}`);
+            setSuccessMessage(`Đã phê duyệt yêu cầu của ${displayName}`);
             fetchSellerRequests();
             setTimeout(() => setSuccessMessage(''), 3000);
         } catch (err) {
-            setError('Khong the phe duyet yeu cau');
+            setError('Không thể phê duyệt yêu cầu');
             console.error(err);
         }
     };
 
     const handleReject = async (id, displayName) => {
-        if (!window.confirm(`Ban chac chan muon tu choi yeu cau cua ${displayName}?`)) {
+        if (!window.confirm(`Bạn chắc chắn muốn từ chối yêu cầu của ${displayName}?`)) {
             return;
         }
 
         try {
             await api.post(`/users/seller-requests/${id}/reject`);
-            setSuccessMessage(`Da tu choi yeu cau cua ${displayName}`);
+            setSuccessMessage(`Đã từ chối yêu cầu của ${displayName}`);
             fetchSellerRequests();
             setTimeout(() => setSuccessMessage(''), 3000);
         } catch (err) {
-            setError('Khong the tu choi yeu cau');
+            setError('Không thể từ chối yêu cầu');
             console.error(err);
         }
     };
@@ -81,8 +81,8 @@ function AdminSellerRequests() {
     return (
         <div className="admin-page">
             <div className="admin-header-section">
-                <h2>Yeu cau tro thanh nguoi ban</h2>
-                <p>Tong cong: {requests.length} yeu cau cho xu ly</p>
+                <h2>Yêu cầu trở thành người bán</h2>
+                <p>Tổng cộng: {requests.length} yêu cầu chờ xử lý</p>
             </div>
 
             {error && <div className="alert alert-danger">{error}</div>}
@@ -93,11 +93,11 @@ function AdminSellerRequests() {
                     <thead>
                         <tr>
                             <th>ID</th>
-                            <th>Ten hien thi</th>
+                            <th>Tên hiển thị</th>
                             <th>Email</th>
-                            <th>Ten shop</th>
-                            <th>Yeu cau luc</th>
-                            <th>Hanh dong</th>
+                            <th>Tên shop</th>
+                            <th>Yêu cầu lúc</th>
+                            <th>Hành động</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -140,7 +140,7 @@ function AdminSellerRequests() {
                                                     cursor: 'pointer',
                                                     transition: 'all 0.3s ease'
                                                 }}
-                                                title="Xem chi tiet"
+                                                title="Xem chi tiết"
                                             >
                                                 <i className="bi bi-eye"></i> Xem
                                             </button>
@@ -157,9 +157,9 @@ function AdminSellerRequests() {
                                                     cursor: 'pointer',
                                                     transition: 'all 0.3s ease'
                                                 }}
-                                                title="Phe duyet"
+                                                title="Phê duyệt"
                                             >
-                                                <i className="bi bi-check-circle"></i> Phe duyet
+                                                <i className="bi bi-check-circle"></i> Phê duyệt
                                             </button>
                                             <button
                                                 className="btn btn-sm"
@@ -173,9 +173,9 @@ function AdminSellerRequests() {
                                                     cursor: 'pointer',
                                                     transition: 'all 0.3s ease'
                                                 }}
-                                                title="Tu choi"
+                                                title="Từ chối"
                                             >
-                                                <i className="bi bi-x-circle"></i> Tu choi
+                                                <i className="bi bi-x-circle"></i> Từ chối
                                             </button>
                                         </td>
                                     </tr>
@@ -186,7 +186,7 @@ function AdminSellerRequests() {
                                 <td colSpan="6" className="text-center">
                                     <div style={{ padding: '30px', color: '#999' }}>
                                         <i className="bi bi-inbox" style={{ fontSize: '2rem', marginBottom: '10px', display: 'block' }}></i>
-                                        Khong co yeu cau cho xu ly
+                                        Không có yêu cầu chờ xử lý
                                     </div>
                                 </td>
                             </tr>
@@ -207,7 +207,7 @@ function AdminSellerRequests() {
                         onClick={(e) => e.stopPropagation()}
                     >
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                            <h3 style={{ margin: 0 }}>Chi tiet ho so ban hang</h3>
+                            <h3 style={{ margin: 0 }}>Chi tiết hồ sơ bán hàng</h3>
                             <button
                                 onClick={() => setShowDetailModal(false)}
                                 style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer' }}
@@ -217,19 +217,19 @@ function AdminSellerRequests() {
                         </div>
 
                         <div style={{ borderBottom: '1px solid #eee', paddingBottom: '15px', marginBottom: '15px' }}>
-                            <h5 style={{ color: '#667eea', marginBottom: '10px' }}>1. Thong tin ca nhan</h5>
-                            <p><strong>Ten hien thi:</strong> {getDisplayName(selectedRequest)}</p>
+                            <h5 style={{ color: '#667eea', marginBottom: '10px' }}>1. Thông tin cá nhân</h5>
+                            <p><strong>Tên hiển thị:</strong> {getDisplayName(selectedRequest)}</p>
                             <p><strong>Email:</strong> {selectedRequest.email}</p>
-                            <p><strong>Ho va ten:</strong> {[selectedRequest.firstName, selectedRequest.lastName].filter(Boolean).join(' ') || '-'}</p>
-                            <p><strong>So dien thoai:</strong> {selectedRequest.phone || '-'}</p>
-                            <p><strong>So CMND/CCCD:</strong> {selectedRequest.idCardNumber || '-'}</p>
+                            <p><strong>Họ và tên:</strong> {[selectedRequest.firstName, selectedRequest.lastName].filter(Boolean).join(' ') || '-'}</p>
+                            <p><strong>Số điện thoại:</strong> {selectedRequest.phone || '-'}</p>
+                            <p><strong>Số CMND/CCCD:</strong> {selectedRequest.idCardNumber || '-'}</p>
                         </div>
 
                         <div style={{ borderBottom: '1px solid #eee', paddingBottom: '15px', marginBottom: '15px' }}>
-                            <h5 style={{ color: '#667eea', marginBottom: '10px' }}>2. Thong tin cua hang</h5>
-                            <p><strong>Ten shop:</strong> {selectedRequest.shopName || '-'}</p>
-                            <p><strong>Dia chi kho hang:</strong> {selectedRequest.shopAddress || '-'}</p>
-                            <p><strong>Mo ta shop:</strong> {selectedRequest.shopDescription || '-'}</p>
+                            <h5 style={{ color: '#667eea', marginBottom: '10px' }}>2. Thông tin cửa hàng</h5>
+                            <p><strong>Tên shop:</strong> {selectedRequest.shopName || '-'}</p>
+                            <p><strong>Địa chỉ kho hàng:</strong> {selectedRequest.shopAddress || '-'}</p>
+                            <p><strong>Mô tả shop:</strong> {selectedRequest.shopDescription || '-'}</p>
                             {selectedRequest.shopLogo && (
                                 <div>
                                     <strong>Logo shop:</strong>
@@ -239,23 +239,23 @@ function AdminSellerRequests() {
                         </div>
 
                         <div style={{ borderBottom: '1px solid #eee', paddingBottom: '15px', marginBottom: '15px' }}>
-                            <h5 style={{ color: '#667eea', marginBottom: '10px' }}>3. Thong tin phap ly</h5>
-                            <p><strong>Tai khoan ngan hang:</strong> {selectedRequest.bankAccount || '-'}</p>
+                            <h5 style={{ color: '#667eea', marginBottom: '10px' }}>3. Thông tin pháp lý</h5>
+                            <p><strong>Tài khoản ngân hàng:</strong> {selectedRequest.bankAccount || '-'}</p>
                             {selectedRequest.idCardFront && (
                                 <div>
-                                    <strong>Mat truoc CMND/CCCD:</strong>
+                                    <strong>Mặt trước CMND/CCCD:</strong>
                                     <img src={selectedRequest.idCardFront} alt="ID card front" style={{ maxWidth: '100%', marginTop: '5px', borderRadius: '4px' }} />
                                 </div>
                             )}
                             {selectedRequest.idCardBack && (
                                 <div style={{ marginTop: '10px' }}>
-                                    <strong>Mat sau CMND/CCCD:</strong>
+                                    <strong>Mặt sau CMND/CCCD:</strong>
                                     <img src={selectedRequest.idCardBack} alt="ID card back" style={{ maxWidth: '100%', marginTop: '5px', borderRadius: '4px' }} />
                                 </div>
                             )}
                             {selectedRequest.businessLicense && (
                                 <div style={{ marginTop: '10px' }}>
-                                    <strong>Giay phep kinh doanh:</strong>
+                                    <strong>Giấy phép kinh doanh:</strong>
                                     <img src={selectedRequest.businessLicense} alt="Business license" style={{ maxWidth: '100%', marginTop: '5px', borderRadius: '4px' }} />
                                 </div>
                             )}
@@ -266,7 +266,7 @@ function AdminSellerRequests() {
                                 onClick={() => setShowDetailModal(false)}
                                 className="btn btn-outline-secondary"
                             >
-                                Dong
+                                Đóng
                             </button>
                         </div>
                     </div>

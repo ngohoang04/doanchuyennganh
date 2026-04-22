@@ -17,7 +17,7 @@ const loadScript = (src, id) => new Promise((resolve, reject) => {
     script.async = true;
     script.defer = true;
     script.onload = () => resolve();
-    script.onerror = () => reject(new Error(`Khong the tai SDK tu ${src}`));
+    script.onerror = () => reject(new Error(`Không thể tải SDK từ ${src}`));
     document.body.appendChild(script);
 });
 
@@ -26,11 +26,11 @@ export const hasFacebookSocialAuth = () => Boolean(FACEBOOK_APP_ID);
 
 export const getSocialAuthConfigError = (provider) => {
     if (provider === 'google' && !GOOGLE_CLIENT_ID) {
-        return 'Chua cau hinh REACT_APP_GOOGLE_CLIENT_ID';
+        return 'Chưa cấu hình REACT_APP_GOOGLE_CLIENT_ID';
     }
 
     if (provider === 'facebook' && !FACEBOOK_APP_ID) {
-        return 'Chua cau hinh REACT_APP_FACEBOOK_APP_ID';
+        return 'Chưa cấu hình REACT_APP_FACEBOOK_APP_ID';
     }
 
     return '';
@@ -48,7 +48,7 @@ export const requestGoogleAccessToken = async () => {
     await googleScriptPromise;
 
     if (!window.google?.accounts?.oauth2) {
-        throw new Error('Khong the khoi tao Google SDK');
+        throw new Error('Không thể khởi tạo Google SDK');
     }
 
     return new Promise((resolve, reject) => {
@@ -57,12 +57,12 @@ export const requestGoogleAccessToken = async () => {
             scope: 'openid email profile',
             callback: (response) => {
                 if (response?.error) {
-                    reject(new Error(response.error_description || response.error || 'Dang nhap Google that bai'));
+                    reject(new Error(response.error_description || response.error || 'Đăng nhập Google thất bại'));
                     return;
                 }
 
                 if (!response?.access_token) {
-                    reject(new Error('Khong nhan duoc access token tu Google'));
+                    reject(new Error('Không nhận được access token từ Google'));
                     return;
                 }
 
@@ -109,13 +109,13 @@ export const requestFacebookAccessToken = async () => {
     await facebookScriptPromise;
 
     if (!window.FB) {
-        throw new Error('Khong the khoi tao Facebook SDK');
+        throw new Error('Không thể khởi tạo Facebook SDK');
     }
 
     return new Promise((resolve, reject) => {
         window.FB.login((response) => {
             if (!response?.authResponse?.accessToken) {
-                reject(new Error('Dang nhap Facebook that bai'));
+                reject(new Error('Đăng nhập Facebook thất bại'));
                 return;
             }
 

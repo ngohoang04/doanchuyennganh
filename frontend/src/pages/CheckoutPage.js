@@ -4,15 +4,15 @@ import { useAuth } from '../context/AuthContext';
 import { checkout, getAvailableVouchers, getCart } from '../services/shop';
 
 const SHIPPING_OPTIONS = [
-    { id: 'standard', label: 'Giao hang tieu chuan', fee: 30000, eta: '3-5 ngay' },
-    { id: 'fast', label: 'Giao hang nhanh', fee: 50000, eta: '1-2 ngay' },
-    { id: 'express', label: 'Hoa toc', fee: 80000, eta: 'Trong ngay' }
+    { id: 'standard', label: 'Giao hàng tiêu chuẩn', fee: 30000, eta: '3-5 ngày' },
+    { id: 'fast', label: 'Giao hàng nhanh', fee: 50000, eta: '1-2 ngày' },
+    { id: 'express', label: 'Hỏa tốc', fee: 80000, eta: 'Trong ngày' }
 ];
 
 const PAYMENT_OPTIONS = [
-    { id: 'cod', label: 'Thanh toan khi nhan hang' },
-    { id: 'bank', label: 'Chuyen khoan ngan hang qua QR shop' },
-    { id: 'wallet', label: 'Vi dien tu' }
+    { id: 'cod', label: 'Thanh toán khi nhận hàng' },
+    { id: 'bank', label: 'Chuyển khoản ngân hàng qua QR shop' },
+    { id: 'wallet', label: 'Ví điện tử' }
 ];
 
 const BANK_NAME_MAP = {
@@ -106,7 +106,7 @@ const buildSellerPaymentGroups = (items = []) => {
                 ? buildVietQrUrl({
                     ...bankInfo,
                     amount: Math.round(group.subtotal),
-                    addInfo: `Thanh toan ${sellerLabel}`
+                    addInfo: `Thanh toán ${sellerLabel}`
                 })
                 : ''
         };
@@ -173,7 +173,7 @@ function CheckoutPage() {
             setAvailableVouchers(voucherResponse.data || []);
             setError('');
         } catch (err) {
-            setError(err.response?.data?.message || 'Khong the tai du lieu thanh toan');
+            setError(err.response?.data?.message || 'Không thể tải dữ liệu thanh toán');
         } finally {
             setLoading(false);
         }
@@ -201,7 +201,7 @@ function CheckoutPage() {
 
         if (!voucher) {
             setAppliedVoucher(null);
-            setError('Ma voucher khong hop le');
+            setError('Mã voucher không hợp lệ');
             return;
         }
 
@@ -211,18 +211,18 @@ function CheckoutPage() {
 
     const handleSubmit = async () => {
         if (!formData.recipientName.trim() || !formData.phone.trim() || !formData.address.trim()) {
-            setError('Vui long nhap day du thong tin nhan hang');
+            setError('Vui lòng nhập đầy đủ thông tin nhận hàng');
             return;
         }
 
         try {
             setSubmitting(true);
             const shippingAddress = [
-                `Nguoi nhan: ${formData.recipientName}`,
-                `So dien thoai: ${formData.phone}`,
-                `Dia chi: ${formData.address}`,
-                `Van chuyen: ${shipping.label}`,
-                `Thanh toan: ${payment.label}`,
+                `Người nhận: ${formData.recipientName}`,
+                `Số điện thoại: ${formData.phone}`,
+                `Địa chỉ: ${formData.address}`,
+                `Vận chuyển: ${shipping.label}`,
+                `Thanh toán: ${payment.label}`,
                 appliedVoucher ? `Voucher: ${appliedVoucher.name}` : null
             ].filter(Boolean).join(' | ');
 
@@ -235,21 +235,21 @@ function CheckoutPage() {
             });
             navigate('/orders');
         } catch (err) {
-            setError(err.response?.data?.message || 'Khong the dat hang');
+            setError(err.response?.data?.message || 'Không thể đặt hàng');
         } finally {
             setSubmitting(false);
         }
     };
 
     if (loading) {
-        return <div className="container py-5">Dang tai trang thanh toan...</div>;
+        return <div className="container py-5">Đang tải trang thanh toán...</div>;
     }
 
     if (!items.length) {
         return (
             <div className="container py-5">
-                <div className="alert alert-info">Gio hang cua ban dang trong.</div>
-                <button className="btn btn-primary" onClick={() => navigate('/products')}>Mua hang ngay</button>
+                <div className="alert alert-info">Giỏ hàng của bạn đang trống.</div>
+                <button className="btn btn-primary" onClick={() => navigate('/products')}>Mua hàng ngay</button>
             </div>
         );
     }
@@ -257,9 +257,9 @@ function CheckoutPage() {
     return (
         <div className="container py-5">
             <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
-                <h2>Thanh toan</h2>
+                <h2>Thanh Toán</h2>
                 <button className="btn btn-outline-secondary" onClick={() => navigate('/cart')}>
-                    Quay lai gio hang
+                    Quay lại giỏ hàng
                 </button>
             </div>
 
@@ -268,10 +268,10 @@ function CheckoutPage() {
             <div className="row g-4">
                 <div className="col-lg-8">
                     <div className="border rounded p-4 bg-white mb-4">
-                        <h4 className="mb-3">Dia chi nhan hang</h4>
+                        <h4 className="mb-3">Địa chỉ nhận hàng</h4>
                         <div className="row g-3">
                             <div className="col-md-6">
-                                <label className="form-label">Nguoi nhan</label>
+                                <label className="form-label">Người nhận</label>
                                 <input
                                     className="form-control"
                                     value={formData.recipientName}
@@ -279,7 +279,7 @@ function CheckoutPage() {
                                 />
                             </div>
                             <div className="col-md-6">
-                                <label className="form-label">So dien thoai</label>
+                                <label className="form-label">Số điện thoại</label>
                                 <input
                                     className="form-control"
                                     value={formData.phone}
@@ -287,7 +287,7 @@ function CheckoutPage() {
                                 />
                             </div>
                             <div className="col-12">
-                                <label className="form-label">Dia chi giao hang</label>
+                                <label className="form-label">Địa chỉ giao hàng</label>
                                 <textarea
                                     className="form-control"
                                     rows="3"
@@ -299,7 +299,7 @@ function CheckoutPage() {
                     </div>
 
                     <div className="border rounded p-4 bg-white mb-4">
-                        <h4 className="mb-3">San pham dat mua</h4>
+                        <h4 className="mb-3">Sản phẩm đặt mua</h4>
                         <div className="d-flex flex-column gap-3">
                             {items.map((item) => (
                                 <div key={item.id} className="d-flex gap-3 align-items-center border rounded p-3">
@@ -310,8 +310,8 @@ function CheckoutPage() {
                                     />
                                     <div className="flex-grow-1">
                                         <h6 className="mb-1">{item.product?.name}</h6>
-                                        <div className="text-muted small">So luong: {item.quantity}</div>
-                                        <div className="text-muted small">Don gia: {Number(item.product?.price || 0).toLocaleString('vi-VN')} VND</div>
+                                        <div className="text-muted small">Số lượng: {item.quantity}</div>
+                                        <div className="text-muted small">Đơn giá: {Number(item.product?.price || 0).toLocaleString('vi-VN')} VND</div>
                                     </div>
                                     <strong className="text-danger">
                                         {(Number(item.product?.price || 0) * Number(item.quantity || 0)).toLocaleString('vi-VN')} VND
@@ -327,28 +327,28 @@ function CheckoutPage() {
                             <input
                                 className="form-control"
                                 style={{ maxWidth: 320 }}
-                                placeholder="Nhap ma voucher"
+                                placeholder="Nhập mã voucher"
                                 value={voucherCode}
                                 onChange={(e) => setVoucherCode(e.target.value)}
                             />
                             <button className="btn btn-outline-primary" onClick={handleApplyVoucher}>
-                                Ap dung
+                                Áp dụng
                             </button>
                         </div>
                         <div className="mt-3 small text-muted">
                             {availableVouchers.length > 0
-                                ? `Voucher kha dung: ${availableVouchers.map((item) => item.code).join(', ')}`
-                                : 'Chua co voucher phu hop'}
+                                ? `Voucher khả dụng: ${availableVouchers.map((item) => item.code).join(', ')}`
+                                : 'Chưa có voucher phù hợp'}
                         </div>
                         {appliedVoucher && (
                             <div className="alert alert-success mt-3 mb-0">
-                                Da ap dung: {appliedVoucher.name}
+                                Đã áp dụng: {appliedVoucher.name}
                             </div>
                         )}
                     </div>
 
                     <div className="border rounded p-4 bg-white mb-4">
-                        <h4 className="mb-3">Phuong thuc van chuyen</h4>
+                        <h4 className="mb-3">Phương thức vận chuyển</h4>
                         <div className="d-flex flex-column gap-3">
                             {SHIPPING_OPTIONS.map((option) => (
                                 <label key={option.id} className="border rounded p-3 d-flex justify-content-between align-items-center">
@@ -370,7 +370,7 @@ function CheckoutPage() {
                     </div>
 
                     <div className="border rounded p-4 bg-white">
-                        <h4 className="mb-3">Phuong thuc thanh toan</h4>
+                        <h4 className="mb-3">Phương thức thanh toán</h4>
                         <div className="d-flex flex-column gap-3">
                             {PAYMENT_OPTIONS.map((option) => (
                                 <label key={option.id} className="border rounded p-3">
@@ -389,9 +389,9 @@ function CheckoutPage() {
 
                     {formData.paymentMethod === 'bank' && (
                         <div className="border rounded p-4 bg-white mt-4">
-                            <h4 className="mb-3">Ma QR chuyen khoan theo shop</h4>
+                            <h4 className="mb-3">Mã QR chuyển khoản theo shop</h4>
                             <div className="alert alert-info">
-                                Neu gio hang co nhieu shop, ban can chuyen khoan tung shop theo ma QR ben duoi truoc khi dat hang.
+                                Nếu giỏ hàng có nhiều shop, bạn cần chuyển khoản từng shop theo mã QR bên dưới trước khi đặt hàng.
                             </div>
                             <div className="d-flex flex-column gap-4">
                                 {sellerPaymentGroups.map((group) => (
@@ -400,7 +400,7 @@ function CheckoutPage() {
                                             <div>
                                                 <div className="fw-bold">{group.sellerLabel}</div>
                                                 <div className="text-muted small">
-                                                    Tong tien san pham cua shop: {group.subtotal.toLocaleString('vi-VN')} VND
+                                                    Tổng tiền sản phẩm của shop: {group.subtotal.toLocaleString('vi-VN')} VND
                                                 </div>
                                             </div>
                                             <div className="text-danger fw-bold">
@@ -418,17 +418,17 @@ function CheckoutPage() {
                                                     />
                                                 </div>
                                                 <div className="col-md-8">
-                                                    <div><strong>Ngan hang:</strong> {group.bankInfo.rawBank}</div>
-                                                    <div><strong>So tai khoan:</strong> {group.bankInfo.accountNumber}</div>
-                                                    <div><strong>Chu tai khoan:</strong> {group.bankInfo.accountName}</div>
+                                                    <div><strong>Ngân hàng:</strong> {group.bankInfo.rawBank}</div>
+                                                    <div><strong>Số tài khoản:</strong> {group.bankInfo.accountNumber}</div>
+                                                    <div><strong>Chủ tài khoản:</strong> {group.bankInfo.accountName}</div>
                                                     <div className="text-muted small mt-2">
-                                                        Thong tin shop dang ky: {group.seller?.bankAccount}
+                                                        Thông tin shop đăng ký: {group.seller?.bankAccount}
                                                     </div>
                                                 </div>
                                             </div>
                                         ) : (
                                             <div className="alert alert-warning mb-0">
-                                                Shop nay chua cau hinh tai khoan ngan hang dung dinh dang `So tai khoan - Ma ngan hang - Ten chu tai khoan`, nen chua tao duoc QR.
+                                                Shop này chưa cấu hình tài khoản ngân hàng đúng định dạng `Số tài khoản - Mã ngân hàng - Tên chủ tài khoản`, nên chưa tạo được QR.
                                             </div>
                                         )}
                                     </div>
@@ -440,26 +440,26 @@ function CheckoutPage() {
 
                 <div className="col-lg-4">
                     <div className="border rounded p-4 bg-white position-sticky" style={{ top: 100 }}>
-                        <h4 className="mb-3">Tong thanh toan</h4>
+                        <h4 className="mb-3">Tổng thanh toán</h4>
                         <div className="d-flex justify-content-between mb-2">
-                            <span>Tam tinh</span>
+                            <span>Tạm tính</span>
                             <strong>{subtotal.toLocaleString('vi-VN')} VND</strong>
                         </div>
                         <div className="d-flex justify-content-between mb-2">
-                            <span>Phi van chuyen</span>
+                            <span>Phí vận chuyển</span>
                             <strong>{shipping.fee.toLocaleString('vi-VN')} VND</strong>
                         </div>
                         <div className="d-flex justify-content-between mb-3">
-                            <span>Giam gia</span>
+                            <span>Giảm giá</span>
                             <strong className="text-success">- {discount.toLocaleString('vi-VN')} VND</strong>
                         </div>
                         <hr />
                         <div className="d-flex justify-content-between align-items-center mb-4">
-                            <span className="fs-5 fw-bold">So tien phai thanh toan</span>
+                            <span className="fs-5 fw-bold">Số tiền phải thanh toán</span>
                             <span className="fs-4 fw-bold text-danger">{total.toLocaleString('vi-VN')} VND</span>
                         </div>
                         <button className="btn btn-primary w-100 btn-lg" onClick={handleSubmit} disabled={submitting}>
-                            {submitting ? 'Dang dat hang...' : 'Dat hang'}
+                            {submitting ? 'Đang đặt hàng...' : 'Đặt hàng'}
                         </button>
                     </div>
                 </div>

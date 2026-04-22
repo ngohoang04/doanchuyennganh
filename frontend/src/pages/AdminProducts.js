@@ -39,7 +39,7 @@ function AdminProducts() {
             setProducts(response.data || []);
             setError('');
         } catch (err) {
-            setError('Khong the tai danh sach san pham');
+            setError('Không thể tải danh sách sản phẩm');
         } finally {
             setLoading(false);
         }
@@ -98,17 +98,17 @@ function AdminProducts() {
             setShowModal(false);
             fetchProducts();
         } catch (err) {
-            setError(err.response?.data?.message || 'Khong the luu san pham');
+            setError(err.response?.data?.message || 'Không thể lưu sản phẩm');
         }
     };
 
     const handleDelete = async (id) => {
-        if (!window.confirm('Ban chac chan muon xoa san pham nay?')) return;
+        if (!window.confirm('Bạn chắc chắn muốn xóa sản phẩm này?')) return;
         try {
             await api.delete(`/products/${id}`);
             fetchProducts();
         } catch (err) {
-            setError(err.response?.data?.message || 'Khong the xoa san pham');
+            setError(err.response?.data?.message || 'Không thể xóa sản phẩm');
         }
     };
 
@@ -130,11 +130,11 @@ function AdminProducts() {
         <div className="admin-page">
             <div className="admin-header-section">
                 <div>
-                    <h2>Quan ly san pham</h2>
-                    <p>Tong cong: {products.length} san pham | Ton kho: {totalStock}</p>
+                    <h2>Quản lý sản phẩm</h2>
+                    <p>Tổng cộng: {products.length} sản phẩm | Tồn kho: {totalStock}</p>
                 </div>
                 <button className="btn btn-primary" onClick={openCreate}>
-                    <i className="bi bi-plus-circle"></i> Them san pham
+                    <i className="bi bi-plus-circle"></i> Thêm sản phẩm
                 </button>
             </div>
 
@@ -145,7 +145,7 @@ function AdminProducts() {
                     <i className="bi bi-search"></i>
                     <input
                         type="text"
-                        placeholder="Tim kiem theo ten hoac ID..."
+                        placeholder="Tìm kiếm theo tên hoặc ID..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="form-control"
@@ -158,13 +158,13 @@ function AdminProducts() {
                     <thead>
                         <tr>
                             <th>ID</th>
-                            <th>Anh</th>
-                            <th>Ten san pham</th>
-                            <th>Danh muc</th>
-                            <th>Gia</th>
+                            <th>Ảnh</th>
+                            <th>Tên sản phẩm</th>
+                            <th>Danh mục</th>
+                            <th>Giá</th>
                             <th>Kho</th>
-                            <th>Ngay tao</th>
-                            <th>Hanh dong</th>
+                            <th>Ngày tạo</th>
+                            <th>Hành động</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -189,7 +189,7 @@ function AdminProducts() {
                                     </td>
                                     <td>
                                         <span className={`badge ${product.stock > 0 ? 'bg-success' : 'bg-danger'}`}>
-                                            {product.stock} san pham
+                                            {product.stock} sản phẩm
                                         </span>
                                     </td>
                                     <td className="text-muted">
@@ -207,7 +207,7 @@ function AdminProducts() {
                             ))
                         ) : (
                             <tr>
-                                <td colSpan="8" className="text-center">Khong tim thay san pham</td>
+                                <td colSpan="8" className="text-center">Không tìm thấy sản phẩm</td>
                             </tr>
                         )}
                     </tbody>
@@ -218,12 +218,12 @@ function AdminProducts() {
                 <div className="modal-overlay" onClick={() => setShowModal(false)}>
                     <div className="modal-content large" onClick={(e) => e.stopPropagation()}>
                         <div className="modal-header">
-                            <h5>{selectedProduct ? 'Chinh sua san pham' : 'Them san pham moi'}</h5>
+                            <h5>{selectedProduct ? 'Chỉnh sửa sản phẩm' : 'Thêm sản phẩm mới'}</h5>
                             <button className="btn-close" onClick={() => setShowModal(false)}></button>
                         </div>
                         <div className="modal-body">
                             <div className="form-group mb-3">
-                                <label>Ten san pham *</label>
+                                <label>Tên sản phẩm *</label>
                                 <input
                                     type="text"
                                     className="form-control"
@@ -234,7 +234,7 @@ function AdminProducts() {
 
                             <div className="form-row">
                                 <div className="form-group mb-3">
-                                    <label>Gia *</label>
+                                    <label>Giá *</label>
                                     <input
                                         type="number"
                                         className="form-control"
@@ -252,13 +252,13 @@ function AdminProducts() {
                                     />
                                 </div>
                                 <div className="form-group mb-3">
-                                    <label>Danh muc *</label>
+                                    <label>Danh mục *</label>
                                     <select
                                         className="form-control"
                                         value={formData.categoryId}
                                         onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
                                     >
-                                        <option value="">Chon danh muc</option>
+                                        <option value="">Chọn danh mục</option>
                                         {categories.map((category) => (
                                             <option key={category.id} value={category.id}>{category.name}</option>
                                         ))}
@@ -267,7 +267,7 @@ function AdminProducts() {
                             </div>
 
                             <div className="form-group mb-3">
-                                <label>Mo ta</label>
+                                <label>Mô tả</label>
                                 <textarea
                                     className="form-control"
                                     rows="4"
@@ -277,7 +277,7 @@ function AdminProducts() {
                             </div>
 
                             <div className="form-group mb-3">
-                                <label>URL hinh anh</label>
+                                <label>URL hình ảnh</label>
                                 <input
                                     type="text"
                                     className="form-control"
@@ -287,8 +287,8 @@ function AdminProducts() {
                             </div>
                         </div>
                         <div className="modal-footer">
-                            <button className="btn btn-secondary" onClick={() => setShowModal(false)}>Huy</button>
-                            <button className="btn btn-primary" onClick={handleSave}>Luu</button>
+                            <button className="btn btn-secondary" onClick={() => setShowModal(false)}>Hủy</button>
+                            <button className="btn btn-primary" onClick={handleSave}>Lưu</button>
                         </div>
                     </div>
                 </div>

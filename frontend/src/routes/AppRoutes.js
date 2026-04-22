@@ -8,6 +8,7 @@ import CheckoutPage from '../pages/CheckoutPage';
 import OrdersPage from '../pages/OrdersPage';
 import Profile from '../pages/Profile';
 import ChangePassword from '../pages/ChangePassword';
+import ResetPasswordPage from '../pages/ResetPasswordPage';
 import AdminDashboard from '../pages/AdminDashboard';
 import AdminUsers from '../pages/AdminUsers';
 import AdminProducts from '../pages/AdminProducts';
@@ -76,6 +77,7 @@ function AppRoutes() {
                             </ProtectedRoute>
                         }
                     />
+                    <Route path="/reset-password" element={<ResetPasswordPage />} />
                 </Route>
 
                 {/* Admin Routes */}

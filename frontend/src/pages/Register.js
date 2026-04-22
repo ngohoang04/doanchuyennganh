@@ -75,19 +75,19 @@ function Register({ show = true, onClose, onShowLogin }) {
         setError('');
 
         if (!formData.firstName.trim() || !formData.lastName.trim()) {
-            setError('Vui long nhap day du ho va ten');
+            setError('Vui lòng nhập đầy đủ họ và tên');
             setLoading(false);
             return;
         }
 
         if (formData.password !== formData.confirmPassword) {
-            setError('Mat khau khong khop');
+            setError('Mật khẩu không khớp');
             setLoading(false);
             return;
         }
 
         if (formData.password.length < 6) {
-            setError('Mat khau phai co it nhat 6 ky tu');
+            setError('Mật khẩu phải có ít nhất 6 ký tự');
             setLoading(false);
             return;
         }
@@ -102,10 +102,10 @@ function Register({ show = true, onClose, onShowLogin }) {
                 avatar: formData.avatar || ''
             });
 
-            alert('Dang ky thanh cong! Vui long dang nhap.');
+            alert('Đăng ký thành công! Vui lòng đăng nhập.');
             handleShowLogin();
         } catch (err) {
-            setError(err.message || 'Co loi khi dang ky');
+            setError(err.message || 'Có lỗi khi đăng ký');
         } finally {
             setLoading(false);
         }
@@ -128,7 +128,7 @@ function Register({ show = true, onClose, onShowLogin }) {
             await socialLogin(provider, accessToken);
             if (onClose) onClose();
         } catch (err) {
-            setError(err.message || 'Dang ky mang xa hoi that bai');
+            setError(err.message || 'Đăng ký mạng xã hội thất bại');
         } finally {
             setSocialLoading('');
         }
@@ -147,8 +147,8 @@ function Register({ show = true, onClose, onShowLogin }) {
             >
                 <button type="button" className="btn-close position-absolute top-0 end-0 m-3" aria-label="Close" onClick={handleClose} style={{ zIndex: 10 }}></button>
                 <div className="auth-header">
-                    <h2>Tao Tai Khoan</h2>
-                    <p>Tham gia TechShop ngay hom nay</p>
+                    <h2>Tạo Tài Khoản</h2>
+                    <p>Tham gia TechShop để mua sắm nhanh hơn mỗi ngày</p>
                 </div>
 
                 {error && <div className="alert alert-danger">{error}</div>}
@@ -156,12 +156,12 @@ function Register({ show = true, onClose, onShowLogin }) {
                 <form onSubmit={handleRegister} className="auth-form">
                     <div className="form-group mb-3">
                         <label className="form-label">
-                            <i className="bi bi-person-vcard"></i> Ho
+                            <i className="bi bi-person-vcard"></i> Họ
                         </label>
                         <input
                             type="text"
                             className="form-control form-control-lg"
-                            placeholder="Nhap ho"
+                            placeholder="Nhập họ"
                             name="firstName"
                             value={formData.firstName}
                             onChange={handleChange}
@@ -171,12 +171,12 @@ function Register({ show = true, onClose, onShowLogin }) {
 
                     <div className="form-group mb-3">
                         <label className="form-label">
-                            <i className="bi bi-person"></i> Ten
+                            <i className="bi bi-person"></i> Tên
                         </label>
                         <input
                             type="text"
                             className="form-control form-control-lg"
-                            placeholder="Nhap ten"
+                            placeholder="Nhập tên"
                             name="lastName"
                             value={formData.lastName}
                             onChange={handleChange}
@@ -191,7 +191,7 @@ function Register({ show = true, onClose, onShowLogin }) {
                         <input
                             type="email"
                             className="form-control form-control-lg"
-                            placeholder="Nhap email"
+                            placeholder="Nhập email"
                             name="email"
                             value={formData.email}
                             onChange={handleChange}
@@ -201,12 +201,12 @@ function Register({ show = true, onClose, onShowLogin }) {
 
                     <div className="form-group mb-3">
                         <label className="form-label">
-                            <i className="bi bi-telephone"></i> So dien thoai
+                            <i className="bi bi-telephone"></i> Số điện thoại
                         </label>
                         <input
                             type="tel"
                             className="form-control form-control-lg"
-                            placeholder="Nhap so dien thoai"
+                            placeholder="Nhập số điện thoại"
                             name="phone"
                             value={formData.phone}
                             onChange={handleChange}
@@ -215,13 +215,13 @@ function Register({ show = true, onClose, onShowLogin }) {
 
                     <div className="form-group mb-3">
                         <label className="form-label">
-                            <i className="bi bi-lock"></i> Mat khau
+                            <i className="bi bi-lock"></i> Mật khẩu
                         </label>
                         <div className="password-input">
                             <input
                                 type={showPassword ? 'text' : 'password'}
                                 className="form-control form-control-lg"
-                                placeholder="Nhap mat khau"
+                                placeholder="Nhập mật khẩu"
                                 name="password"
                                 value={formData.password}
                                 onChange={handleChange}
@@ -235,13 +235,13 @@ function Register({ show = true, onClose, onShowLogin }) {
 
                     <div className="form-group mb-3">
                         <label className="form-label">
-                            <i className="bi bi-lock-check"></i> Xac nhan mat khau
+                            <i className="bi bi-lock-check"></i> Xác nhận mật khẩu
                         </label>
                         <div className="password-input">
                             <input
                                 type={showConfirm ? 'text' : 'password'}
                                 className="form-control form-control-lg"
-                                placeholder="Xac nhan mat khau"
+                                placeholder="Xác nhận mật khẩu"
                                 name="confirmPassword"
                                 value={formData.confirmPassword}
                                 onChange={handleChange}
@@ -255,7 +255,7 @@ function Register({ show = true, onClose, onShowLogin }) {
 
                     <div className="form-group mb-3">
                         <label className="form-label">
-                            <i className="bi bi-image"></i> Avatar (Tuy chon)
+                            <i className="bi bi-image"></i> Ảnh đại diện (tùy chọn)
                         </label>
                         <input type="file" className="form-control form-control-lg" accept="image/*" onChange={handleAvatarChange} />
                         {formData.avatar && (
@@ -272,12 +272,12 @@ function Register({ show = true, onClose, onShowLogin }) {
                     <div className="form-check mb-3">
                         <input type="checkbox" className="form-check-input" id="agree" required />
                         <label className="form-check-label" htmlFor="agree">
-                            Toi dong y voi <Link to="#" className="link-primary">dieu khoan dich vu</Link>
+                            Tôi đồng ý với <Link to="#" className="link-primary">điều khoản dịch vụ</Link>
                         </label>
                     </div>
 
                     <button type="submit" className="btn btn-register w-100 mb-3" disabled={loading}>
-                        {loading ? 'Dang tao tai khoan...' : 'Tao Tai Khoan'}
+                        {loading ? 'Đang tạo tài khoản...' : 'Tạo Tài Khoản'}
                     </button>
                 </form>
 
@@ -289,7 +289,7 @@ function Register({ show = true, onClose, onShowLogin }) {
                     onClick={() => handleSocialRegister('google')}
                     disabled={Boolean(socialLoading)}
                 >
-                    <i className="bi bi-google"></i> {socialLoading === 'google' ? 'Dang ket noi Google...' : 'Dang ky voi Google'}
+                    <i className="bi bi-google"></i> {socialLoading === 'google' ? 'Đang kết nối Google...' : 'Đăng ký với Google'}
                 </button>
 
                 <button
@@ -298,18 +298,18 @@ function Register({ show = true, onClose, onShowLogin }) {
                     onClick={() => handleSocialRegister('facebook')}
                     disabled={Boolean(socialLoading)}
                 >
-                    <i className="bi bi-facebook"></i> {socialLoading === 'facebook' ? 'Dang ket noi Facebook...' : 'Dang ky voi Facebook'}
+                    <i className="bi bi-facebook"></i> {socialLoading === 'facebook' ? 'Đang kết nối Facebook...' : 'Đăng ký với Facebook'}
                 </button>
 
                 <div className="auth-footer">
-                    <p>Ban da co tai khoan?</p>
+                    <p>Bạn đã có tài khoản?</p>
                     <button
                         type="button"
                         className="link-primary btn btn-link"
                         onClick={handleShowLogin}
                         style={{ textDecoration: 'none', padding: 0, border: 'none' }}
                     >
-                        Dang nhap ngay
+                        Đăng nhập ngay
                     </button>
                 </div>
             </div>

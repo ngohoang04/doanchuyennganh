@@ -5,13 +5,15 @@ const getApiBaseUrl = () => process.env.REACT_APP_API_URL || 'http://localhost:5
 const normalizeAuthError = (error, fallbackMessage) => {
     if (!error.response) {
         return {
-            message: `Khong the ket noi toi backend tai ${getApiBaseUrl()}. Hay kiem tra backend dang chay va dung cong.`
+            message: `Không thể kết nối tới backend tại ${getApiBaseUrl()}. Hãy kiểm tra backend đang chạy và đúng cổng.`
         };
     }
+
     const backendMessage = error.response?.data?.message;
     if (error.response?.status === 401 && backendMessage?.startsWith('Not authorized')) {
-        return { message: 'Phien dang nhap da het han hoac khong hop le. Vui long dang nhap lai.' };
+        return { message: 'Phiên đăng nhập đã hết hạn hoặc không hợp lệ. Vui lòng đăng nhập lại.' };
     }
+
     return error.response?.data || { message: fallbackMessage };
 };
 
@@ -27,10 +29,9 @@ export const login = async (email, password) => {
         return response.data;
     } catch (error) {
         if (!error.response) {
-            throw new Error(`Khong the ket noi toi backend tai ${getApiBaseUrl()}. Hay khoi dong backend roi thu lai.`);
+            throw new Error(`Không thể kết nối tới backend tại ${getApiBaseUrl()}. Hãy khởi động backend rồi thử lại.`);
         }
-        const errorMessage = error.response?.data?.message || error.message || 'Loi khi dang nhap';
-        throw new Error(errorMessage);
+        throw new Error(error.response?.data?.message || error.message || 'Lỗi khi đăng nhập');
     }
 };
 
@@ -39,7 +40,7 @@ export const register = async (userData) => {
         const response = await api.post('/auth/register', userData);
         return response.data;
     } catch (error) {
-        throw normalizeAuthError(error, 'Loi khi dang ky');
+        throw normalizeAuthError(error, 'Lỗi khi đăng ký');
     }
 };
 
@@ -55,9 +56,27 @@ export const socialLogin = async (provider, accessToken) => {
         return response.data;
     } catch (error) {
         if (!error.response) {
-            throw new Error(`Khong the ket noi toi backend tai ${getApiBaseUrl()}. Hay khoi dong backend roi thu lai.`);
+            throw new Error(`Không thể kết nối tới backend tại ${getApiBaseUrl()}. Hãy khởi động backend rồi thử lại.`);
         }
-        throw new Error(error.response?.data?.message || 'Loi khi dang nhap mang xa hoi');
+        throw new Error(error.response?.data?.message || 'Lỗi khi đăng nhập mạng xã hội');
+    }
+};
+
+export const requestPasswordReset = async (email) => {
+    try {
+        const response = await api.post('/auth/forgot-password', { email }, { skipAuthRedirect: true });
+        return response.data;
+    } catch (error) {
+        throw normalizeAuthError(error, 'Không thể gửi email đặt lại mật khẩu');
+    }
+};
+
+export const resetPasswordWithToken = async (token, newPassword) => {
+    try {
+        const response = await api.post('/auth/reset-password', { token, newPassword }, { skipAuthRedirect: true });
+        return response.data;
+    } catch (error) {
+        throw normalizeAuthError(error, 'Không thể đặt lại mật khẩu');
     }
 };
 
@@ -77,13 +96,9 @@ export const getUser = () => {
     }
 };
 
-export const getToken = () => {
-    return localStorage.getItem('token');
-};
+export const getToken = () => localStorage.getItem('token');
 
-export const isAuthenticated = () => {
-    return !!localStorage.getItem('token');
-};
+export const isAuthenticated = () => Boolean(localStorage.getItem('token'));
 
 export const getCurrentUser = async (userId) => {
     try {
@@ -95,7 +110,7 @@ export const getCurrentUser = async (userId) => {
         }
         return response.data;
     } catch (error) {
-        throw normalizeAuthError(error, 'Loi khi tai thong tin tai khoan');
+        throw normalizeAuthError(error, 'Lỗi khi tải thông tin tài khoản');
     }
 };
 
@@ -109,7 +124,7 @@ export const updateUser = async (userId, userData) => {
         }
         return response.data;
     } catch (error) {
-        throw normalizeAuthError(error, 'Loi khi cap nhat thong tin');
+        throw normalizeAuthError(error, 'Lỗi khi cập nhật thông tin');
     }
 };
 
@@ -121,7 +136,7 @@ export const changePassword = async (userId, oldPassword, newPassword) => {
         });
         return response.data;
     } catch (error) {
-        throw normalizeAuthError(error, 'Loi khi doi mat khau');
+        throw normalizeAuthError(error, 'Lỗi khi đổi mật khẩu');
     }
 };
 
@@ -141,6 +156,6 @@ export const submitSellerRequest = async (userId, sellerData) => {
                 sellerStatus: 'pending'
             });
         }
-        throw normalizeAuthError(error, 'Loi khi gui ho so nguoi ban');
+        throw normalizeAuthError(error, 'Lỗi khi gửi hồ sơ người bán');
     }
 };

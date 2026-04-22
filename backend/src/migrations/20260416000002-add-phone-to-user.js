@@ -1,13 +1,15 @@
 'use strict';
 /** @type {import('sequelize-cli').Migration} */
+const { addColumnIfMissing, removeColumnIfExists } = require('./helpers/schema');
+
 module.exports = {
     async up(queryInterface, Sequelize) {
-        await queryInterface.addColumn('Users', 'phone', {
+        await addColumnIfMissing(queryInterface, ['Users', 'users'], 'phone', {
             type: Sequelize.STRING,
             allowNull: true
         });
     },
     async down(queryInterface, Sequelize) {
-        await queryInterface.removeColumn('Users', 'phone');
+        await removeColumnIfExists(queryInterface, ['Users', 'users'], 'phone');
     }
 };

@@ -14,7 +14,6 @@ function ChangePassword() {
         new: false,
         confirm: false
     });
-
     const [formData, setFormData] = useState({
         oldPassword: '',
         newPassword: '',
@@ -22,17 +21,17 @@ function ChangePassword() {
     });
 
     const handleChange = (e) => {
-        setFormData({
-            ...formData,
+        setFormData((prev) => ({
+            ...prev,
             [e.target.name]: e.target.value
-        });
+        }));
     };
 
     const togglePasswordVisibility = (field) => {
-        setShowPasswords({
-            ...showPasswords,
-            [field]: !showPasswords[field]
-        });
+        setShowPasswords((prev) => ({
+            ...prev,
+            [field]: !prev[field]
+        }));
     };
 
     const handleSubmit = async (e) => {
@@ -40,42 +39,40 @@ function ChangePassword() {
         setError('');
         setSuccess('');
 
-        // Validation
         if (!formData.oldPassword) {
-            setError('Vui lòng nhập mật khẩu cũ');
+            setError('Vui lòng nhập mật khẩu cũ.');
             return;
         }
 
         if (formData.newPassword.length < 6) {
-            setError('Mật khẩu mới phải có ít nhất 6 ký tự');
+            setError('Mật khẩu mới phải có ít nhất 6 ký tự.');
             return;
         }
 
         if (formData.newPassword !== formData.confirmPassword) {
-            setError('Mật khẩu mới không khớp');
+            setError('Mật khẩu xác nhận không khớp.');
             return;
         }
 
         if (formData.oldPassword === formData.newPassword) {
-            setError('Mật khẩu mới phải khác mật khẩu cũ');
+            setError('Mật khẩu mới phải khác mật khẩu cũ.');
             return;
         }
 
         setLoading(true);
-
         try {
             await changePassword(user.id, formData.oldPassword, formData.newPassword);
-            setSuccess('Đổi mật khẩu thành công!');
+            setSuccess('Đổi mật khẩu thành công.');
             setFormData({
                 oldPassword: '',
                 newPassword: '',
                 confirmPassword: ''
             });
-            setTimeout(() => {
+            window.setTimeout(() => {
                 navigate('/profile');
-            }, 2000);
+            }, 1500);
         } catch (err) {
-            setError(err.message || 'Lỗi khi đổi mật khẩu');
+            setError(err.message || 'Lỗi khi đổi mật khẩu.');
         } finally {
             setLoading(false);
         }
@@ -84,7 +81,7 @@ function ChangePassword() {
     if (!user) {
         return (
             <div className="container mt-5 text-center">
-                <p>Vui lòng đăng nhập để thay đổi mật khẩu</p>
+                <p>Vui lòng đăng nhập để thay đổi mật khẩu.</p>
             </div>
         );
     }
@@ -117,11 +114,7 @@ function ChangePassword() {
                                             placeholder="Nhập mật khẩu cũ"
                                             required
                                         />
-                                        <button
-                                            type="button"
-                                            className="btn-toggle-password"
-                                            onClick={() => togglePasswordVisibility('old')}
-                                        >
+                                        <button type="button" className="btn-toggle-password" onClick={() => togglePasswordVisibility('old')}>
                                             <i className={`bi ${showPasswords.old ? 'bi-eye-slash' : 'bi-eye'}`}></i>
                                         </button>
                                     </div>
@@ -136,14 +129,10 @@ function ChangePassword() {
                                             name="newPassword"
                                             value={formData.newPassword}
                                             onChange={handleChange}
-                                            placeholder="Nhập mật khẩu mới (tối thiểu 6 ký tự)"
+                                            placeholder="Nhập mật khẩu mới"
                                             required
                                         />
-                                        <button
-                                            type="button"
-                                            className="btn-toggle-password"
-                                            onClick={() => togglePasswordVisibility('new')}
-                                        >
+                                        <button type="button" className="btn-toggle-password" onClick={() => togglePasswordVisibility('new')}>
                                             <i className={`bi ${showPasswords.new ? 'bi-eye-slash' : 'bi-eye'}`}></i>
                                         </button>
                                     </div>
@@ -158,14 +147,10 @@ function ChangePassword() {
                                             name="confirmPassword"
                                             value={formData.confirmPassword}
                                             onChange={handleChange}
-                                            placeholder="Xác nhận mật khẩu mới"
+                                            placeholder="Nhập lại mật khẩu mới"
                                             required
                                         />
-                                        <button
-                                            type="button"
-                                            className="btn-toggle-password"
-                                            onClick={() => togglePasswordVisibility('confirm')}
-                                        >
+                                        <button type="button" className="btn-toggle-password" onClick={() => togglePasswordVisibility('confirm')}>
                                             <i className={`bi ${showPasswords.confirm ? 'bi-eye-slash' : 'bi-eye'}`}></i>
                                         </button>
                                     </div>
@@ -173,17 +158,12 @@ function ChangePassword() {
 
                                 <div className="password-requirements mb-4">
                                     <p className="text-muted small">
-                                        <i className="bi bi-info-circle"></i>
-                                        Mật khẩu phải có ít nhất 6 ký tự
+                                        <i className="bi bi-info-circle"></i> Mật khẩu nên có ít nhất 6 ký tự.
                                     </p>
                                 </div>
 
                                 <div className="form-actions">
-                                    <button
-                                        type="submit"
-                                        className="btn btn-primary btn-lg w-100 mb-2"
-                                        disabled={loading}
-                                    >
+                                    <button type="submit" className="btn btn-primary btn-lg w-100 mb-2" disabled={loading}>
                                         {loading ? (
                                             <>
                                                 <span className="spinner-border spinner-border-sm me-2"></span>
@@ -193,11 +173,7 @@ function ChangePassword() {
                                             'Đổi mật khẩu'
                                         )}
                                     </button>
-                                    <button
-                                        type="button"
-                                        className="btn btn-outline-secondary btn-lg w-100"
-                                        onClick={() => navigate('/profile')}
-                                    >
+                                    <button type="button" className="btn btn-outline-secondary btn-lg w-100" onClick={() => navigate('/profile')}>
                                         Quay lại
                                     </button>
                                 </div>

@@ -13,11 +13,11 @@ function AdminLayout({ children }) {
 
     const menuItems = [
         { label: 'Dashboard', icon: 'bi-speedometer2', path: '/admin' },
-        { label: 'Nguoi dung', icon: 'bi-people', path: '/admin/users' },
-        { label: 'San pham', icon: 'bi-box', path: '/admin/products' },
-        { label: 'Yeu cau ban hang', icon: 'bi-person-check', path: '/admin/seller-requests' },
-        { label: 'Danh muc', icon: 'bi-list', path: '/admin/categories' },
-        { label: 'Don hang', icon: 'bi-bag-check', path: '/admin/orders' },
+        { label: 'Người dùng', icon: 'bi-people', path: '/admin/users' },
+        { label: 'Sản phẩm', icon: 'bi-box', path: '/admin/products' },
+        { label: 'Yêu cầu bán hàng', icon: 'bi-person-check', path: '/admin/seller-requests' },
+        { label: 'Danh mục', icon: 'bi-list', path: '/admin/categories' },
+        { label: 'Đơn hàng', icon: 'bi-bag-check', path: '/admin/orders' },
         { label: 'Voucher', icon: 'bi-ticket-perforated', path: '/admin/vouchers' }
     ];
 
@@ -56,9 +56,9 @@ function AdminLayout({ children }) {
                 </nav>
 
                 <div className="sidebar-footer">
-                    <button className="btn btn-danger w-100" onClick={handleLogout} title="Dang xuat">
+                    <button className="btn btn-danger w-100" onClick={handleLogout} title="Đăng xuất">
                         <i className="bi bi-box-arrow-right"></i>
-                        {sidebarOpen && 'Dang xuat'}
+                        {sidebarOpen && 'Đăng xuất'}
                     </button>
                 </div>
             </aside>
@@ -78,7 +78,7 @@ function AdminLayout({ children }) {
                             onClick={() => navigate('/')}
                         >
                             <i className="bi bi-house-door me-2"></i>
-                            Ve trang chu
+                            Về trang chủ
                         </button>
                         <div className="user-info">
                             <span className="user-name">{displayName}</span>

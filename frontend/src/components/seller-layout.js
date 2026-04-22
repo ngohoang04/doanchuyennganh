@@ -12,9 +12,9 @@ function SellerLayout({ children }) {
     const displayName = user?.shopName || user?.lastName || user?.firstName || user?.email;
 
     const menuItems = [
-        { label: 'Tong quan', icon: 'bi-speedometer2', path: '/seller' },
-        { label: 'San pham cua toi', icon: 'bi-box', path: '/seller/products' },
-        { label: 'Don ban hang', icon: 'bi-bag-check', path: '/seller/orders' },
+        { label: 'Tổng quan', icon: 'bi-speedometer2', path: '/seller' },
+        { label: 'Sản phẩm của tôi', icon: 'bi-box', path: '/seller/products' },
+        { label: 'Đơn bán hàng', icon: 'bi-bag-check', path: '/seller/orders' },
         { label: 'Voucher', icon: 'bi-ticket-perforated', path: '/seller/vouchers' }
     ];
 
@@ -55,7 +55,7 @@ function SellerLayout({ children }) {
                 <div className="sidebar-footer">
                     <button className="btn btn-danger w-100" onClick={handleLogout}>
                         <i className="bi bi-box-arrow-right"></i>
-                        {sidebarOpen && 'Dang xuat'}
+                        {sidebarOpen && 'Đăng xuất'}
                     </button>
                 </div>
             </aside>
@@ -75,7 +75,7 @@ function SellerLayout({ children }) {
                             onClick={() => navigate('/')}
                         >
                             <i className="bi bi-house-door me-2"></i>
-                            Ve trang chu
+                            Về trang chủ
                         </button>
                         <div className="user-info">
                             <span className="user-name">{displayName}</span>
