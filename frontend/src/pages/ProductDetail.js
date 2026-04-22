@@ -129,6 +129,9 @@ function ProductDetail() {
             window.dispatchEvent(new Event('open-login-modal'));
             return;
         }
+        if (String(product?.seller?.id) === String(user?.id)) {
+            return;
+        }
 
         try {
             setSubmitting(true);
@@ -198,6 +201,7 @@ function ProductDetail() {
         : reviewEligibility?.message || 'Bạn chỉ có thể đánh giá sau khi đơn hàng đã hoàn thành.';
     const canReview = Boolean(reviewEligibility?.canReview);
     const hasReviewed = Boolean(reviewEligibility?.hasReviewed);
+    const isOwnProduct = isAuthenticated && user && String(product?.seller?.id) === String(user?.id);
     const gallery = Array.isArray(product.images) && product.images.length > 0
         ? product.images
         : [product.image].filter(Boolean);
@@ -251,13 +255,14 @@ function ProductDetail() {
                             style={{ width: 120 }}
                             value={quantity}
                             onChange={(e) => setQuantity(Math.max(1, Number(e.target.value) || 1))}
+                            disabled={isOwnProduct}
                         />
                         <button
                             className="btn btn-primary btn-lg"
-                            disabled={submitting || !product.stock}
+                            disabled={submitting || !product.stock || isOwnProduct}
                             onClick={handleAddToCart}
                         >
-                            Thêm vào giỏ hàng
+                            {isOwnProduct ? 'Sản phẩm của shop bạn' : 'Thêm vào giỏ hàng'}
                         </button>
                         {product?.seller?.id && String(product.seller.id) !== String(user?.id) && (
                             <button
@@ -269,6 +274,11 @@ function ProductDetail() {
                             </button>
                         )}
                     </div>
+                    {isOwnProduct && (
+                        <div className="text-muted small">
+                            Bạn không thể mua sản phẩm do chính shop của mình đăng bán.
+                        </div>
+                    )}
                 </div>
             </div>
 

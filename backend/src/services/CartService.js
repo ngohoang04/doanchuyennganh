@@ -66,6 +66,9 @@ class CartService {
         if (!product) {
             throw new Error('Product not found');
         }
+        if (String(product.sellerId) === String(userId)) {
+            throw new Error('Bạn không thể mua sản phẩm của chính mình');
+        }
 
         let cart = await Cart.findOne({ where: { userId } });
 

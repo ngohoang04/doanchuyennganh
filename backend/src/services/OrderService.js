@@ -94,6 +94,9 @@ class OrderService {
             if (!product) {
                 throw new Error('Product not found');
             }
+            if (String(product.sellerId) === String(userId)) {
+                throw new Error('Bạn không thể mua sản phẩm của chính mình');
+            }
             if (product.stock < item.quantity) {
                 throw new Error(`Product '${product.name}' does not have enough stock`);
             }
@@ -114,15 +117,14 @@ class OrderService {
             normalizedPaymentMethod.includes('qr') ||
             normalizedPaymentMethod.includes('chuyển khoản') ||
             normalizedPaymentMethod.includes('chuyen khoan');
-        const paymentStatus = isBankTransfer
-            ? 'awaiting_transfer'
-            : 'pending';
+        const paymentStatus = isBankTransfer ? 'awaiting_transfer' : 'pending';
+        const orderStatus = 'pending';
 
         const order = await Order.create({
             userId,
             totalAmount: Math.max(total + shippingFee - discountAmount, 0),
             shippingAddress,
-            status: 'pending',
+            status: orderStatus,
             paymentStatus
         });
 
