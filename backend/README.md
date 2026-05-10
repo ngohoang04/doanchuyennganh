@@ -227,7 +227,8 @@ Route → Controller → Service → Model → Database
 ## 📌 Tác giả
 
 * Sinh viên: Ngô Trọng Hoàng
+             Bùi Phương Anh
 * Môn học: Đồ án chuyên ngành
-* Giảng viên: (Tên GV)
+* Giảng viên: Nguyễn Thị Thanh
 
 ---

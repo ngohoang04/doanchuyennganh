@@ -3,8 +3,18 @@ import { useAuth } from '../context/AuthContext';
 import { getChatContacts, getConversation, sendChatMessage } from '../services/shop';
 import './chat-widget.css';
 
+const IMAGE_ONLY_PREVIEW = 'Đã gửi ảnh';
+
 const getContactName = (contact) =>
     contact?.shopName || [contact?.lastName, contact?.firstName].filter(Boolean).join(' ') || contact?.email || 'Người dùng';
+
+const readFileAsDataUrl = (file) =>
+    new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(new Error('Không thể đọc tệp hình ảnh'));
+        reader.readAsDataURL(file);
+    });
 
 function ChatWidget() {
     const { user, isAuthenticated } = useAuth();
@@ -13,11 +23,13 @@ function ChatWidget() {
     const [selectedContact, setSelectedContact] = useState(null);
     const [messages, setMessages] = useState([]);
     const [messageText, setMessageText] = useState('');
+    const [selectedImage, setSelectedImage] = useState('');
     const [loadingContacts, setLoadingContacts] = useState(false);
     const [loadingMessages, setLoadingMessages] = useState(false);
     const [sending, setSending] = useState(false);
     const panelRef = useRef(null);
     const messagesEndRef = useRef(null);
+    const fileInputRef = useRef(null);
 
     const selectedContactId = selectedContact?.id;
 
@@ -134,20 +146,22 @@ function ChatWidget() {
 
     const handleSendMessage = async (e) => {
         if (e) e.preventDefault();
-        if (!selectedContact || !messageText.trim()) return;
+        const normalizedText = messageText.trim();
+        if (!selectedContact || (!normalizedText && !selectedImage)) return;
 
         try {
             setSending(true);
             const response = await sendChatMessage({
                 receiverId: selectedContact.id,
-                content: messageText.trim()
+                content: normalizedText,
+                image: selectedImage
             });
             const newMessage = response.data;
             setMessages((prev) => [...prev, newMessage]);
             setContacts((prev) => {
                 const nextContact = {
                     ...selectedContact,
-                    lastMessage: newMessage.content,
+                    lastMessage: newMessage.content || (newMessage.image ? IMAGE_ONLY_PREVIEW : ''),
                     lastMessageAt: newMessage.createdAt || new Date().toISOString(),
                     unreadCount: 0
                 };
@@ -155,15 +169,38 @@ function ChatWidget() {
                 return [nextContact, ...others];
             });
             setMessageText('');
+            setSelectedImage('');
+            if (fileInputRef.current) {
+                fileInputRef.current.value = '';
+            }
         } finally {
             setSending(false);
+        }
+    };
+
+    const handleImageChange = async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        try {
+            const image = await readFileAsDataUrl(file);
+            setSelectedImage(image);
+        } finally {
+            e.target.value = '';
+        }
+    };
+
+    const handleClearSelectedImage = () => {
+        setSelectedImage('');
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
         }
     };
 
     const handleMessageKeyDown = (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
-            if (!sending && messageText.trim()) {
+            if (!sending && (messageText.trim() || selectedImage)) {
                 handleSendMessage();
             }
         }
@@ -239,7 +276,18 @@ function ChatWidget() {
                                                 const isMine = String(message.senderId) === String(user.id);
                                                 return (
                                                     <div key={message.id} className={`chat-widget-message ${isMine ? 'mine' : 'theirs'}`}>
-                                                        <div className="chat-widget-message-bubble">{message.content}</div>
+                                                        <div className="chat-widget-message-bubble">
+                                                            {message.image && (
+                                                                <img
+                                                                    src={message.image}
+                                                                    alt="Ảnh đã gửi"
+                                                                    className="chat-widget-message-image"
+                                                                />
+                                                            )}
+                                                            {message.content && (
+                                                                <div className="chat-widget-message-text">{message.content}</div>
+                                                            )}
+                                                        </div>
                                                         <div className="chat-widget-message-time">
                                                             {new Date(message.createdAt).toLocaleString('vi-VN')}
                                                         </div>
@@ -251,15 +299,41 @@ function ChatWidget() {
                                     </div>
 
                                     <form className="chat-widget-form" onSubmit={handleSendMessage}>
-                                        <textarea
-                                            className="form-control"
-                                            rows="2"
-                                            placeholder="Nhập tin nhắn... Enter để gửi, Shift+Enter để xuống dòng"
-                                            value={messageText}
-                                            onChange={(e) => setMessageText(e.target.value)}
-                                            onKeyDown={handleMessageKeyDown}
-                                        />
-                                        <button className="btn btn-primary" type="submit" disabled={sending || !messageText.trim()}>
+                                        <div className="chat-widget-form-fields">
+                                            {selectedImage && (
+                                                <div className="chat-widget-image-preview">
+                                                    <img src={selectedImage} alt="Ảnh sắp gửi" className="chat-widget-image-preview-img" />
+                                                    <button
+                                                        type="button"
+                                                        className="chat-widget-image-remove"
+                                                        onClick={handleClearSelectedImage}
+                                                    >
+                                                        <i className="bi bi-x-lg"></i>
+                                                    </button>
+                                                </div>
+                                            )}
+                                            <textarea
+                                                className="form-control"
+                                                rows="2"
+                                                placeholder="Nhập tin nhắn hoặc gửi ảnh QR... Enter để gửi, Shift+Enter để xuống dòng"
+                                                value={messageText}
+                                                onChange={(e) => setMessageText(e.target.value)}
+                                                onKeyDown={handleMessageKeyDown}
+                                            />
+                                            <div className="chat-widget-form-actions">
+                                                <label className="btn btn-outline-secondary mb-0">
+                                                    <i className="bi bi-image"></i> Ảnh
+                                                    <input
+                                                        ref={fileInputRef}
+                                                        type="file"
+                                                        accept="image/*"
+                                                        className="chat-widget-file-input"
+                                                        onChange={handleImageChange}
+                                                    />
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <button className="btn btn-primary" type="submit" disabled={sending || (!messageText.trim() && !selectedImage)}>
                                             {sending ? 'Đang gửi...' : 'Gửi'}
                                         </button>
                                     </form>

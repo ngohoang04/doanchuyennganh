@@ -36,11 +36,33 @@ const buildSellerSettingsForm = (user) => ({
     shopLogo: user?.shopLogo || ''
 });
 
+const imagePreviewStyle = {
+    width: 180,
+    height: 180,
+    objectFit: 'contain',
+    border: '1px solid #e0e0e0',
+    borderRadius: 12,
+    padding: 8,
+    background: '#fff'
+};
+
+const ImagePreview = ({ src, alt, label }) => {
+    if (!src) return null;
+
+    return (
+        <div className="col-md-12 mb-3">
+            <div className="small text-muted mb-2">{label}</div>
+            <img src={src} alt={alt} style={imagePreviewStyle} />
+        </div>
+    );
+};
+
 function Profile() {
     const navigate = useNavigate();
     const { user, updateUser, submitSellerRequest, logout } = useAuth();
     const [isEditing, setIsEditing] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [processingSellerImages, setProcessingSellerImages] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
     const [showSellerForm, setShowSellerForm] = useState(false);
@@ -151,6 +173,8 @@ function Profile() {
         }));
     };
 
+    const hasImageValue = (value) => typeof value === 'string' && value.trim().startsWith('data:image/');
+
     const handleImageFieldChange = async (e, setter) => {
         const { name, files } = e.target;
         const file = files?.[0];
@@ -170,11 +194,34 @@ function Profile() {
         }
     };
 
-    const handleSellerFileChange = (e) => handleImageFieldChange(e, setSellerForm);
+    const handleSellerFileChange = async (e) => {
+        setProcessingSellerImages(true);
+        try {
+            await handleImageFieldChange(e, setSellerForm);
+        } finally {
+            setProcessingSellerImages(false);
+        }
+    };
     const handleSellerSettingsFileChange = (e) => handleImageFieldChange(e, setSellerSettings);
 
     const handleSellerRequestSubmit = async (e) => {
         e.preventDefault();
+        if (processingSellerImages) {
+            setError('Ảnh đang được xử lý. Vui lòng chờ một chút rồi gửi lại.');
+            return;
+        }
+        if (!hasImageValue(sellerForm.bankQrImage)) {
+            setError('Vui lòng tải ảnh QR ngân hàng.');
+            return;
+        }
+        if (!hasImageValue(sellerForm.idCardFront)) {
+            setError('Vui lòng tải ảnh CMND/CCCD mặt trước.');
+            return;
+        }
+        if (!hasImageValue(sellerForm.idCardBack)) {
+            setError('Vui lòng tải ảnh CMND/CCCD mặt sau.');
+            return;
+        }
         if (!window.confirm('Bạn có chắc chắn muốn gửi hồ sơ đăng ký người bán?')) return;
 
         setLoading(true);
@@ -534,28 +581,21 @@ function Profile() {
                                                 </div>
                                                 <div className="col-md-6 mb-3">
                                                     <label className="form-label">Ảnh QR ngân hàng</label>
-                                                    <input type="file" className="form-control" name="bankQrImage" accept="image/*" onChange={handleSellerFileChange} required />
+                                                    <input type="file" className="form-control" name="bankQrImage" accept="image/*" onChange={handleSellerFileChange} />
                                                 </div>
-                                                {sellerForm.bankQrImage && (
-                                                    <div className="col-md-12 mb-3">
-                                                        <img
-                                                            src={sellerForm.bankQrImage}
-                                                            alt="QR ngân hàng"
-                                                            style={{ width: 180, height: 180, objectFit: 'contain', border: '1px solid #e0e0e0', borderRadius: 12, padding: 8, background: '#fff' }}
-                                                        />
-                                                    </div>
-                                                )}
+                                                <ImagePreview src={sellerForm.shopLogo} alt="Logo shop" label="Xem trước logo shop" />
+                                                <ImagePreview src={sellerForm.bankQrImage} alt="QR ngân hàng" label="Xem trước ảnh QR ngân hàng" />
                                             </div>
 
                                             <h5 className="mb-3 text-primary border-bottom pb-2">3. Thông tin pháp lý</h5>
                                             <div className="row mb-4">
                                                 <div className="col-md-6 mb-3">
                                                     <label className="form-label">Ảnh CMND/CCCD mặt trước</label>
-                                                    <input type="file" className="form-control" name="idCardFront" accept="image/*" onChange={handleSellerFileChange} required />
+                                                    <input type="file" className="form-control" name="idCardFront" accept="image/*" onChange={handleSellerFileChange} />
                                                 </div>
                                                 <div className="col-md-6 mb-3">
                                                     <label className="form-label">Ảnh CMND/CCCD mặt sau</label>
-                                                    <input type="file" className="form-control" name="idCardBack" accept="image/*" onChange={handleSellerFileChange} required />
+                                                    <input type="file" className="form-control" name="idCardBack" accept="image/*" onChange={handleSellerFileChange} />
                                                 </div>
                                                 <div className="col-md-6 mb-3">
                                                     <label className="form-label">Giấy phép kinh doanh</label>
@@ -573,13 +613,16 @@ function Profile() {
                                                         required
                                                     />
                                                 </div>
+                                                <ImagePreview src={sellerForm.idCardFront} alt="CMND/CCCD mặt trước" label="Xem trước CMND/CCCD mặt trước" />
+                                                <ImagePreview src={sellerForm.idCardBack} alt="CMND/CCCD mặt sau" label="Xem trước CMND/CCCD mặt sau" />
+                                                <ImagePreview src={sellerForm.businessLicense} alt="Giấy phép kinh doanh" label="Xem trước giấy phép kinh doanh" />
                                             </div>
 
                                             <div className="d-flex gap-2">
-                                                <button type="submit" className="btn btn-primary px-4" disabled={loading}>
+                                                <button type="submit" className="btn btn-primary px-4" disabled={loading || processingSellerImages}>
                                                     {loading ? 'Đang gửi...' : 'Gửi hồ sơ'}
                                                 </button>
-                                                <button type="button" className="btn btn-outline-secondary px-4" onClick={() => setShowSellerForm(false)} disabled={loading}>
+                                                <button type="button" className="btn btn-outline-secondary px-4" onClick={() => setShowSellerForm(false)} disabled={loading || processingSellerImages}>
                                                     Hủy
                                                 </button>
                                             </div>

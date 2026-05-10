@@ -25,6 +25,7 @@ module.exports = (sequelize, DataTypes) => {
     senderId: DataTypes.INTEGER,
     receiverId: DataTypes.INTEGER,
     content: DataTypes.TEXT,
+    image: { type: DataTypes.TEXT('long'), allowNull: true },
     isRead: {
       type: DataTypes.BOOLEAN,
       allowNull: false,

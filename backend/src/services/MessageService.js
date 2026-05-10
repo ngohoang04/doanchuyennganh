@@ -6,6 +6,10 @@ class MessageService {
         return ['id', 'email', 'firstName', 'lastName', 'avatar', 'role', 'shopName', 'shopLogo'];
     }
 
+    static buildMessagePreview(message) {
+        return String(message?.content || '').trim() || (message?.image ? 'Đã gửi ảnh' : '');
+    }
+
     static async getContacts(currentUser) {
         const messages = await Message.findAll({
             where: {
@@ -38,7 +42,7 @@ class MessageService {
                 avatar: otherUser.avatar || otherUser.shopLogo || null,
                 role: otherUser.role,
                 shopName: otherUser.shopName || null,
-                lastMessage: message.content,
+                lastMessage: this.buildMessagePreview(message),
                 lastMessageAt: message.createdAt,
                 unreadCount: 0
             });
@@ -95,9 +99,10 @@ class MessageService {
     static async sendMessage(currentUser, data) {
         const receiverId = Number(data.receiverId);
         const content = String(data.content || '').trim();
+        const image = String(data.image || '').trim();
 
-        if (!receiverId || !content) {
-            throw new Error('Receiver and content are required');
+        if (!receiverId || (!content && !image)) {
+            throw new Error('Receiver and content or image are required');
         }
 
         if (String(receiverId) === String(currentUser.id)) {
@@ -115,7 +120,8 @@ class MessageService {
         const message = await Message.create({
             senderId: currentUser.id,
             receiverId,
-            content,
+            content: content || '',
+            image: image || null,
             isRead: false
         });
 
